@@ -34,7 +34,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--primary)}
 .group-section{margin-bottom:20px}
 .group-title{font-size:14px;font-weight:700;color:var(--text-muted);margin-bottom:8px;display:flex;align-items:center;gap:6px;border-left:3px solid var(--primary);padding-left:6px}
 
-/* 한 줄에 4개가 나오도록 수정된 그리드 레이아웃 */
+/* 한 줄에 4개가 나오도록 설정된 그리드 레이아웃 */
 .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .card{background:var(--card-bg);border-radius:10px;padding:10px 12px;box-shadow:0 1px 2px #0000000d;border:1px solid var(--border)}
 .metric{cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}
@@ -151,7 +151,7 @@ th.group-header{background:#f1f5f9;color:var(--text-main);font-weight:700;font-s
   <label class="btn" style="margin-left:auto">기준일 <input id="asOf" type="date" onchange="render()"></label>
  </div>
 
- <!-- 하단 테이블 분류 기준에 맞춘 상단 카드 그룹 영역 (한 줄에 4개 배치) -->
+ <!-- 상단 카드 그룹 영역 (한 줄에 4개 배치) -->
  <div id="cardsContainer"></div>
 
  <section class="section">
@@ -316,7 +316,7 @@ th.group-header{background:#f1f5f9;color:var(--text-main);font-weight:700;font-s
   <hr style="border:0;border-top:1px solid var(--border);margin:14px 0">
   
   <div id="eventEditSection">
-   <div style="font-weight:700;font-size:13px;margin-bottom:6px">✏️ 선택한 이벤트 수정</div>
+   <div style="font-weight:700;font-size:13px;margin-bottom:6px">✏️ 선택한 이벤트 수정 / 삭제</div>
    <input id="editEventId" type="hidden">
    <p><label>일시<br><input id="editEventDate" type="datetime-local" style="width:100%"></label></p>
    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
@@ -1004,6 +1004,13 @@ function deleteLabRecord(){
  window.save(); closeModal("medicalModal"); closeModal("dayModal");
 }
 
+/* 캘린더 모달 내에서 개별 의료기록 삭제 기능 추가 */
+function deleteLabRecordByDate(dateStr){
+ if(!confirm(`${dateStr.replace("T"," ")} 의료기록을 삭제할까요?`)) return;
+ window.db.labs = (window.db.labs||[]).filter(x => x.date !== dateStr);
+ window.save(); closeModal("dayModal");
+}
+
 function openEvent(date){
  document.getElementById("eventModal").style.display="flex";
  let dt = date || nowDateTimeISO();
@@ -1033,7 +1040,10 @@ function openDayEvents(dateStr){
          <b>🏥 ${lab.hospital || "의료기관"}</b> <span class="muted">(${lab.date.includes("T") ? lab.date.split("T")[1] : ""})</span>
          <div class="muted" style="margin-top:2px">K ${fmt(lab.K)} | Cr ${fmt(lab.Cr)} | BUN ${fmt(lab.BUN)}</div>
        </div>
-       <button class="btn" style="padding:4px 8px;font-size:11px" onclick="openMedicalUpload('${lab.date}')">✏️ 수정</button>
+       <div style="display:flex;gap:4px">
+         <button class="btn" style="padding:4px 8px;font-size:11px" onclick="openMedicalUpload('${lab.date}')">✏️ 수정</button>
+         <button class="btn danger" style="padding:4px 8px;font-size:11px" onclick="deleteLabRecordByDate('${lab.date}')">🗑️ 삭제</button>
+       </div>
      </div>`).join("");
  } else {
    labBox.innerHTML = `
