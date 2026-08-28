@@ -30,16 +30,46 @@ body{margin:0;background:var(--bg-color);color:var(--text-main);font-family:-app
 .btn.danger:active{background:#dc2626}
 input,select,textarea{font:inherit;border:1px solid var(--border);border-radius:8px;padding:10px 12px;background:#fff;outline:none;transition:border-color .15s;font-size:14px}
 input:focus,select:focus,textarea:focus{border-color:var(--primary)}
-.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 .card{background:var(--card-bg);border-radius:14px;padding:16px;box-shadow:0 1px 3px #0000000d,0 1px 2px #00000006;border:1px solid var(--border)}
 .metric{cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}
 .metric:active{transform:scale(0.98)}
-.metric h3{font-size:13px;margin:0 0 8px;color:var(--text-muted);font-weight:600}
-.value{font-size:20px;font-weight:800;line-height:1.2;letter-spacing:-0.5px}.unit{font-size:11px;color:var(--text-muted);font-weight:500}
-.status{display:inline-block;margin-top:6px;padding:2px 6px;border-radius:99px;font-size:10px;font-weight:700;background:#dcfce7;color:#166534}
-.status.warn{background:#fef3c7;color:#92400e}.status.danger{background:#fee2e2;color:#991b1b}
+.metric h3{font-size:14px;margin:0 0 8px;color:var(--text-muted);font-weight:700}
+.value{font-size:22px;font-weight:800;line-height:1.2;letter-spacing:-0.5px}.unit{font-size:12px;color:var(--text-muted);font-weight:500}
 .range-spec{font-size:11px;color:#94a3b8;margin-top:4px;font-weight:500}
 .muted{font-size:12px;color:var(--text-muted)}.section{margin-top:24px}.section-title{font-size:16px;font-weight:700;margin-bottom:12px;letter-spacing:-0.3px}
+
+/* 막대형 그래프 스타일 (이미지 형태 반영) */
+.range-bar-container {
+  width: 100%;
+  margin-top: 10px;
+}
+.range-bar-wrapper {
+  display: flex;
+  height: 16px;
+  border: 1px solid #000;
+  position: relative;
+  background: #fff;
+}
+.range-bar-seg {
+  flex: 1;
+  border-right: 1px solid #000;
+}
+.range-bar-seg:last-child {
+  border-right: none;
+}
+.range-marker {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 6px;
+  background: #000;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+.range-marker.danger { background: #dc2626; }
+.range-marker.warn { background: #d97706; }
+
 .tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:4px;-webkit-overflow-scrolling:touch}
 .tab{border:1px solid var(--border);background:#fff;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;min-height:38px}
 .tab.active{background:#0f172a;color:#fff;border-color:#0f172a}
@@ -81,9 +111,9 @@ th.group-header{background:#f1f5f9;color:var(--text-main);font-weight:700;font-s
 #syncBadge{font-size:11px;padding:4px 8px;border-radius:12px;background:#e2e8f0;color:#475569;font-weight:600}
 #syncBadge.online{background:#dcfce7;color:#166534}
 
-@media(max-width:950px){.grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:950px){.grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:600px){
-  .grid{grid-template-columns:repeat(2,1fr)}
+  .grid{grid-template-columns:repeat(1,1fr)}
   .form-grid{grid-template-columns:repeat(2,1fr)}
   .header-inner{flex-direction:row}
   .toolbar{flex-direction:row;justify-content:space-between}
@@ -168,7 +198,7 @@ th.group-header{background:#f1f5f9;color:var(--text-main);font-weight:700;font-s
        <th colspan="2" class="group-header">기타 정보</th>
       </tr>
       <tr>
-       <th class="col-border">날짜</th>
+       <th class="col-border">일시</th>
        <th>K</th><th>Na</th><th>Ca</th><th class="col-border">Cl</th>
        <th>Cr</th><th>BUN</th><th class="col-border">Phos</th>
        <th>HCO₃⁻</th><th>pH</th><th>BE</th><th class="col-border">AnGap(+)</th>
@@ -199,10 +229,10 @@ th.group-header{background:#f1f5f9;color:var(--text-main);font-weight:700;font-s
 <div class="modal" id="medicalModal" onclick="if(event.target===this)closeModal('medicalModal')">
  <div class="modal-box">
   <h3 id="medicalModalTitle" style="margin-top:0;font-size:18px">의료기록 등록</h3>
-  <p class="muted">검사 날짜와 병원명을 입력하고 수치를 입력해주세요.</p>
+  <p class="muted">검사 일시(날짜/시간)와 병원명을 입력하고 수치를 입력해주세요.</p>
   
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-   <label style="font-size:12px;font-weight:600">의료기록 날짜<br><input id="medicalDate" type="date" style="width:100%;margin-top:4px"></label>
+   <label style="font-size:12px;font-weight:600">의료기록 일시<br><input id="medicalDate" type="datetime-local" style="width:100%;margin-top:4px"></label>
    <label style="font-size:12px;font-weight:600">병원/기관명 (선택)<br><input id="hospitalName" style="width:100%;margin-top:4px" placeholder="예: 경기동물병원"></label>
   </div>
 
@@ -240,7 +270,7 @@ th.group-header{background:#f1f5f9;color:var(--text-main);font-weight:700;font-s
  <div class="modal-box">
   <h3 style="margin-top:0;font-size:18px">이벤트 기록</h3>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-   <input id="eventDate" type="date">
+   <input id="eventDate" type="datetime-local">
    <select id="eventType">
     <option>이벤트</option>
     <option>증상</option>
@@ -277,7 +307,7 @@ th.group-header{background:#f1f5f9;color:var(--text-main);font-weight:700;font-s
   <div id="eventEditSection">
    <div style="font-weight:700;font-size:14px;margin-bottom:8px">✏️ 선택한 이벤트 수정</div>
    <input id="editEventId" type="hidden">
-   <p><label>날짜<br><input id="editEventDate" type="date" style="width:100%"></label></p>
+   <p><label>일시<br><input id="editEventDate" type="datetime-local" style="width:100%"></label></p>
    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
     <label>종류<br>
      <select id="editEventType" style="width:100%">
@@ -310,7 +340,6 @@ th.group-header{background:#f1f5f9;color:var(--text-main);font-weight:700;font-s
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-// ⚠️ 아래 firebaseConfig 객체에 Firebase 콘솔에서 발급받은 본인 프로젝트의 키 정보를 넣으세요.
 const firebaseConfig = {
   apiKey: "AIzaSyB7YRG0l2PFXbCFaNb_6OCXo-wQup-CChc",
   authDomain: "mimi-a0134.firebaseapp.com",
@@ -331,13 +360,11 @@ window.db = {
  events: []
 };
 
-// 데이터 저장 (Firebase 동기화)
 window.save = function() {
   set(ref(firebaseDb, 'mimi_medical_data'), window.db)
     .catch(err => console.error("Firebase 저장 오류:", err));
 };
 
-// 실시간 데이터 수신 (상대방 입력 시 내 화면도 자동 갱신)
 const dataRef = ref(firebaseDb, 'mimi_medical_data');
 onValue(dataRef, (snapshot) => {
   const val = snapshot.val();
@@ -366,6 +393,12 @@ let eventChartPoints = [];
 let fluidChartPoints = [];
 
 document.getElementById("asOf").value=new Date().toISOString().slice(0,10);
+
+function nowDateTimeISO() {
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  return now.toISOString().slice(0, 16);
+}
 
 function fmt(v){return v==null||v===""?"—":v}
 function sortedLabs(){return [...(window.db.labs||[])].sort((a,b)=>a.date.localeCompare(b.date))}
@@ -398,17 +431,17 @@ function judge(field,v){
       (field==="Cr"&&v>=r.dangerHigh)||(field==="HCO3"&&v<=r.dangerLow)||
       (field==="pH"&&v<=r.dangerLow)||(field==="Phos"&&v>=r.dangerHigh)||
       (field==="BIL"&&v>=r.dangerHigh)||(field==="AnGap"&&v>=r.dangerHigh))
-      return ["위험","danger"];
-   return ["주의","warn"];
+      return ["HIGH","danger"];
+   return [v > r.high ? "HIGH" : "LOW","warn"];
  }
- return ["정상",""];
+ return ["NORMAL",""];
 }
 
 const allMetrics = [
- ["K","칼륨 (K)","mmol/L","#2563eb"],
- ["Na","나트륨 (Na)","mmol/L","#059669"],
- ["Ca","칼슘 (Ca)","mg/dL","#d97706"],
- ["Cl","염소 (Cl)","mmol/L","#7c3aed"],
+ ["K","K","mmol/L","#2563eb"],
+ ["Na","Na","mmol/L","#059669"],
+ ["Ca","Ca","mg/dL","#d97706"],
+ ["Cl","Cl","mmol/L","#7c3aed"],
  ["Cr","Creatinine","mg/dL","#dc2626"],
  ["BUN","BUN","mg/dL","#ea580c"],
  ["Phos","Phosphorus","mg/dL","#0284c7"],
@@ -440,16 +473,70 @@ function onRangeChange(val){
  renderAllCharts();
 }
 
+function renderBarHtml(f, v) {
+  let r = ranges[f];
+  if (!r || v == null || isNaN(v)) {
+    return `
+      <div class="range-bar-container">
+        <div class="range-bar-wrapper">
+          <div class="range-bar-seg"></div>
+          <div class="range-bar-seg"></div>
+          <div class="range-bar-seg"></div>
+        </div>
+      </div>`;
+  }
+
+  const low = r.low;
+  const high = r.high;
+  const normalSpan = high - low;
+  const minVal = low - normalSpan;
+  const maxVal = high + normalSpan;
+
+  let posPct = 50;
+  if (v < low) {
+    let ratio = (v - minVal) / (low - minVal);
+    ratio = Math.max(0, Math.min(1, ratio));
+    posPct = (1 / 3) * ratio * 100;
+  } else if (v <= high) {
+    let ratio = (v - low) / (high - low);
+    posPct = (1 / 3 + (1 / 3) * ratio) * 100;
+  } else {
+    let ratio = (v - high) / (maxVal - high);
+    ratio = Math.max(0, Math.min(1, ratio));
+    posPct = (2 / 3 + (1 / 3) * ratio) * 100;
+  }
+
+  posPct = Math.max(1, Math.min(99, posPct));
+  let status = judge(f, v);
+  let markerClass = status[1]; 
+
+  return `
+    <div class="range-bar-container">
+      <div class="range-bar-wrapper">
+        <div class="range-bar-seg"></div>
+        <div class="range-bar-seg"></div>
+        <div class="range-bar-seg"></div>
+        <div class="range-marker ${markerClass}" style="left: ${posPct}%;"></div>
+      </div>
+    </div>`;
+}
+
 function renderCards(){
  document.getElementById("cards").innerHTML=allMetrics.map(([f,n,u])=>{
    let x=latest(f),v=x?.[f],s=judge(f,v);
-   let rStr=ranges[f]?.str ? `정상 ${ranges[f].str}` : '';
+   let statusColor = s[1] === 'danger' ? '#dc2626' : (s[1] === 'warn' ? '#d97706' : '#166534');
+   let displayDate = x ? x.date.replace("T", " ") : "기록 없음";
    return `<div class="card metric" onclick="selectMetric('${f}')">
-     <h3>${n}</h3>
-     <div class="value">${fmt(v)} <span class="unit">${u}</span></div>
-     <div><span class="status ${s[1]}">${s[0]}</span></div>
-     <div class="range-spec">${rStr}</div>
-     <div class="muted" style="margin-top:4px">${x?x.date:"기록 없음"}</div>
+     <div style="display:flex;justify-content:space-between;align-items:center;">
+       <h3>${n} <span class="unit">(${u})</span></h3>
+       <span style="font-weight:bold;font-size:12px;color:${statusColor}">${s[0]}</span>
+     </div>
+     <div style="display:flex;justify-content:space-between;align-items:baseline;">
+       <div class="value" style="color:${s[1] ? statusColor : 'inherit'}">${fmt(v)}</div>
+       <div class="range-spec">${ranges[f]?.str || ''}</div>
+     </div>
+     ${renderBarHtml(f, v)}
+     <div class="muted" style="margin-top:6px;font-size:11px;text-align:right">${displayDate}</div>
    </div>`;
  }).join("");
 }
@@ -539,7 +626,7 @@ function renderLabChart(){
    visibleDates.forEach((d, i) => {
      let x = L + (visibleDates.length === 1 ? iw/2 : iw * i / (visibleDates.length - 1));
      ctx.fillStyle = "#475569"; ctx.font = "10px sans-serif";
-     ctx.fillText(d.slice(5), x - 14, h - 10);
+     ctx.fillText(d.length > 10 ? d.slice(5, 16).replace("T", " ") : d.slice(5), x - 18, h - 10);
 
      const labData = labs.find(x => x.date === d) || {};
      labChartPoints.push({ x, y: h/2, date: d, isAll: true, labData });
@@ -576,7 +663,7 @@ function renderLabChart(){
    visibleDates.forEach((d, i) => {
      let x = L + (visibleDates.length === 1 ? iw/2 : iw * i / (visibleDates.length - 1));
      ctx.fillStyle = "#475569"; ctx.font = "10px sans-serif";
-     ctx.fillText(d.slice(5), x - 14, h - 10);
+     ctx.fillText(d.length > 10 ? d.slice(5, 16).replace("T", " ") : d.slice(5), x - 18, h - 10);
    });
 
    pts.forEach((p) => {
@@ -609,7 +696,7 @@ function renderEventChart(){
    let x = L + (visibleDates.length === 1 ? iw/2 : iw * i / (visibleDates.length - 1));
    ctx.beginPath(); ctx.moveTo(x, T); ctx.lineTo(x, h - B); ctx.stroke();
    ctx.fillStyle = "#475569"; ctx.font = "10px sans-serif";
-   ctx.fillText(d.slice(5), x - 14, h - 10);
+   ctx.fillText(d.length > 10 ? d.slice(5, 16).replace("T", " ") : d.slice(5), x - 18, h - 10);
  });
 
  visibleDates.forEach((d, i) => {
@@ -696,7 +783,7 @@ function renderFluidChart(){
  fluidData.forEach((d, i) => {
    let x = L + (visibleDates.length === 1 ? iw/2 : iw * i / (visibleDates.length - 1));
    ctx.fillStyle = "#475569"; ctx.font = "10px sans-serif";
-   ctx.fillText(d.date.slice(5), x - 14, h - 10);
+   ctx.fillText(d.date.length > 10 ? d.date.slice(5, 16).replace("T", " ") : d.date.slice(5), x - 18, h - 10);
 
    let yTotal = T + ih * (maxVal - d.total) / maxVal;
    let yDrink = T + ih * (maxVal - d.drink) / maxVal;
@@ -753,7 +840,7 @@ function setupTooltip(wrapId, tooltipId, getPoints, renderTooltipContent) {
 }
 
 setupTooltip("chartWrap", "chartTooltip", () => labChartPoints, p => {
- let html = `<b>${p.date}</b><br>`;
+ let html = `<b>${p.date.replace("T", " ")}</b><br>`;
  if(p.isAll) {
    html += `<div style="margin-top:4px;font-size:10px;display:grid;grid-template-columns:1fr 1fr;gap:2px">`;
    allMetrics.forEach(([f]) => {
@@ -767,16 +854,19 @@ setupTooltip("chartWrap", "chartTooltip", () => labChartPoints, p => {
 });
 
 setupTooltip("eventChartWrap", "eventChartTooltip", () => eventChartPoints, p => {
- return `<b>${p.date}</b><br>• [${p.event.type}] ${p.event.title}<br><span style="font-size:10px;color:#cbd5e1">${p.event.memo||""}</span>`;
+ return `<b>${p.date.replace("T", " ")}</b><br>• [${p.event.type}] ${p.event.title}<br><span style="font-size:10px;color:#cbd5e1">${p.event.memo||""}</span>`;
 });
 
 setupTooltip("fluidChartWrap", "fluidChartTooltip", () => fluidChartPoints, p => {
- return `<b>${p.date}</b><br>💧 음수량: <b>${p.drink}</b><br>💉 수액량: <b>${p.fluid}</b><br>📊 <b>합계: ${p.total}</b>`;
+ return `<b>${p.date.replace("T", " ")}</b><br>💧 음수량: <b>${p.drink}</b><br>💉 수액량: <b>${p.fluid}</b><br>📊 <b>합계: ${p.total}</b>`;
 });
 
 function renderRisk(){
  let out=[];
- allMetrics.forEach(([f,n])=>{let x=latest(f);if(x){let j=judge(f,x[f]);if(j[0]==="위험")out.push(`<div class="alert danger">🔴 <b>${n}: 위험 수치</b> — ${x[f]} (${x.date})</div>`);else if(j[0]==="주의")out.push(`<div class="alert warn">🟠 <b>${n}: 주의 필요</b> — ${x[f]} (${x.date})</div>`)}});
+ allMetrics.forEach(([f,n])=>{let x=latest(f);if(x){let j=judge(f,x[f]);if(j[0]==="HIGH"||j[0]==="LOW"){
+    if(j[1]==="danger") out.push(`<div class="alert danger">🔴 <b>${n}: 위험 수치 (${j[0]})</b> — ${x[f]} (${x.date.replace("T"," ")})</div>`);
+    else out.push(`<div class="alert warn">🟠 <b>${n}: 주의 필요 (${j[0]})</b> — ${x[f]} (${x.date.replace("T"," ")})</div>`);
+ }}});
  if(!out.length)out.push(`<div class="alert ok">🟢 정상범위를 이탈한 주요 검사 항목이 없습니다.</div>`);
  document.getElementById("riskBox").innerHTML=out.join("");
 }
@@ -792,7 +882,7 @@ function renderTable(){
    const x=labs[0]||{};
    const eventText=ev.length?ev.map(e=>`${e.type||"이벤트"}: ${e.title||"기록"}`).join(" / "):"—";
    return `<tr>
-    <td class="col-border"><b>${date}</b></td>
+    <td class="col-border"><b>${date.replace("T", " ")}</b></td>
     <td>${fmt(x.K)}</td><td>${fmt(x.Na)}</td><td>${fmt(x.Ca)}</td><td class="col-border">${fmt(x.Cl)}</td>
     <td>${fmt(x.Cr)}</td><td>${fmt(x.BUN)}</td><td class="col-border">${fmt(x.Phos)}</td>
     <td>${fmt(x.HCO3)}</td><td>${fmt(x.pH)}</td><td>${fmt(x.BE)}</td><td class="col-border">${fmt(x.AnGap)}</td>
@@ -809,6 +899,7 @@ function dateKey(d){
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 }
+
 function renderCalendar(){
  const y=calDate.getFullYear(),m=calDate.getMonth(),first=new Date(y,m,1),start=first.getDay(),days=new Date(y,m+1,0).getDate();
  document.getElementById("monthTitle").textContent=`${y}년 ${m+1}월`;
@@ -818,10 +909,18 @@ function renderCalendar(){
  while(cells.length<42){let d=cells.length-(start+days)+1;cells.push({n:d,other:true,date:new Date(y,m+1,d)})}
  let head=["일","월","화","수","목","금","토"].map(x=>`<div class="weekday">${x}</div>`).join("");
  let body=cells.map(c=>{
-   let ds=dateKey(c.date),labs=(window.db.labs||[]).filter(x=>x.date===ds),ev=(window.db.events||[]).filter(x=>x.date===ds);
+   let ds=dateKey(c.date);
+   let labs=(window.db.labs||[]).filter(x=>x.date.startsWith(ds));
+   let ev=(window.db.events||[]).filter(x=>x.date.startsWith(ds));
    let records=[];
-   labs.forEach(x=>records.push(`<div class="record">${x.hospital?x.hospital:"검사"}</div>`));
-   ev.forEach(x=>records.push(`<div class="record event">${x.title||"이벤트"}</div>`));
+   labs.forEach(x=>{
+     let timeStr = x.date.includes("T") ? x.date.split("T")[1] : "";
+     records.push(`<div class="record">${timeStr ? timeStr + ' ' : ''}${x.hospital?x.hospital:"검사"}</div>`);
+   });
+   ev.forEach(x=>{
+     let timeStr = x.date.includes("T") ? x.date.split("T")[1] : "";
+     records.push(`<div class="record event">${timeStr ? timeStr + ' ' : ''}${x.title||"이벤트"}</div>`);
+   });
    return `<div class="cal-day ${c.other?'other':''}" onclick="openDayEvents('${ds}')"><div class="cal-num">${c.n}</div>${records.join("")}</div>`;
  }).join("");
  document.getElementById("calendar").innerHTML=head+body;
@@ -831,7 +930,8 @@ function moveMonth(n){calDate.setMonth(calDate.getMonth()+n);renderCalendar()}
 function openMedicalUpload(targetDate, forceNew = false){
  closeModal('dayModal');
  document.getElementById("medicalModal").style.display="flex";
- const dateToUse = targetDate || document.getElementById("asOf").value || dateKey(new Date());
+ let dateToUse = targetDate || nowDateTimeISO();
+ if(dateToUse.length === 10) dateToUse += "T12:00";
  document.getElementById("medicalDate").value = dateToUse;
  
  const lab = forceNew ? null : (window.db.labs||[]).find(x => x.date === dateToUse);
@@ -867,14 +967,16 @@ function openMedicalUpload(targetDate, forceNew = false){
 function deleteLabRecord(){
  const date = document.getElementById("medicalDate").value;
  if(!date) return;
- if(!confirm(`${date} 의료기록을 삭제할까요?`)) return;
+ if(!confirm(`${date.replace("T"," ")} 의료기록을 삭제할까요?`)) return;
  window.db.labs = (window.db.labs||[]).filter(x => x.date !== date);
  window.save(); closeModal("medicalModal"); closeModal("dayModal");
 }
 
 function openEvent(date){
  document.getElementById("eventModal").style.display="flex";
- document.getElementById("eventDate").value=date||dateKey(new Date());
+ let dt = date || nowDateTimeISO();
+ if(dt.length === 10) dt += "T12:00";
+ document.getElementById("eventDate").value=dt;
  document.getElementById("eventTitle").value="";
  document.getElementById("eventMemo").value="";
 }
@@ -887,29 +989,29 @@ function saveEvent(){
  window.save();closeModal("eventModal");
 }
 
-function openDayEvents(date){
- document.getElementById("dayModalTitle").textContent=`${date} 상세`;
+function openDayEvents(dateStr){
+ document.getElementById("dayModalTitle").textContent=`${dateStr} 상세`;
  
- const lab = (window.db.labs||[]).find(x => x.date === date);
+ const labs = (window.db.labs||[]).filter(x => x.date.startsWith(dateStr));
  const labBox = document.getElementById("dayLabBox");
- if(lab) {
-   labBox.innerHTML = `
-     <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:12px">
+ if(labs.length) {
+   labBox.innerHTML = labs.map(lab => `
+     <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:12px;margin-bottom:8px">
        <div>
-         <b>🏥 ${lab.hospital || "의료기관"}</b>
+         <b>🏥 ${lab.hospital || "의료기관"}</b> <span class="muted">(${lab.date.includes("T") ? lab.date.split("T")[1] : ""})</span>
          <div class="muted" style="margin-top:4px">K ${fmt(lab.K)} | Cr ${fmt(lab.Cr)} | BUN ${fmt(lab.BUN)}</div>
        </div>
-       <button class="btn" onclick="openMedicalUpload('${date}')">✏️ 수정</button>
-     </div>`;
+       <button class="btn" onclick="openMedicalUpload('${lab.date}')">✏️ 수정</button>
+     </div>`).join("");
  } else {
    labBox.innerHTML = `
      <div class="empty" style="padding:12px">
        등록된 의료기록이 없습니다. 
-       <button class="btn primary" style="margin-left:8px;padding:4px 10px;min-height:32px;font-size:12px" onclick="openMedicalUpload('${date}', true)">＋ 의료기록 추가</button>
+       <button class="btn primary" style="margin-left:8px;padding:4px 10px;min-height:32px;font-size:12px" onclick="openMedicalUpload('${dateStr}', true)">＋ 의료기록 추가</button>
      </div>`;
  }
 
- const events=(window.db.events||[]).filter(e=>e.date===date);
+ const events=(window.db.events||[]).filter(e=>e.date.startsWith(dateStr));
  const list=document.getElementById("dayEventList");
  const editSec=document.getElementById("eventEditSection");
  
@@ -921,7 +1023,7 @@ function openDayEvents(date){
    editSec.style.display="block";
    list.innerHTML=events.map(e=>`
     <div class="card" style="margin-bottom:8px;cursor:pointer" onclick="selectEventForEdit('${e.id}')">
-      <b>${e.title||"이벤트"}</b> <span class="muted">[${e.type||"이벤트"}]</span>
+      <b>${e.title||"이벤트"}</b> <span class="muted">[${e.type||"이벤트"}] (${e.date.includes("T") ? e.date.split("T")[1] : ""})</span>
       <div class="muted" style="margin-top:4px">${e.memo||"내용 없음"}</div>
     </div>`).join("");
    selectEventForEdit(events[0].id);
