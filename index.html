@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>미미 의료기록</title>
+<style>
+:root {
+  --bg-color: #f8fafc;
+  --card-bg: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --border: #e2e8f0;
+  --group-border: #64748b;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+body{margin:0;background:var(--bg-color);color:var(--text-main);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;-webkit-font-smoothing:antialiased}
+.header{background:#0f172a;color:#fff;padding:16px 24px;position:sticky;top:0;z-index:10;box-shadow:0 4px 12px #00000010}
+.header-inner{max-width:1400px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.title{font-size:20px;font-weight:800;letter-spacing:-0.5px}
+.container{max-width:1400px;margin:24px auto;padding:0 16px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;align-items:center}
+.btn{border:1px solid var(--border);border-radius:10px;padding:10px 16px;background:#fff;color:var(--text-main);font-weight:600;font-size:14px;cursor:pointer;transition:all .15s ease;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px}
+.btn:active{background:#f1f5f9;border-color:#cbd5e1}
+.btn.primary{background:var(--primary);color:#fff;border:none}
+.btn.primary:active{background:var(--primary-hover)}
+.btn.danger{background:#ef4444;color:#fff;border:none}
+.btn.danger:active{background:#dc2626}
+input,select,textarea{font:inherit;border:1px solid var(--border);border-radius:8px;padding:10px 12px;background:#fff;outline:none;transition:border-color .15s;font-size:14px}
+input:focus,select:focus,textarea:focus{border-color:var(--primary)}
+.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.card{background:var(--card-bg);border-radius:14px;padding:16px;box-shadow:0 1px 3px #0000000d,0 1px 2px #00000006;border:1px solid var(--border)}
+.metric{cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}
+.metric:active{transform:scale(0.98)}
+.metric h3{font-size:13px;margin:0 0 8px;color:var(--text-muted);font-weight:600}
+.value{font-size:20px;font-weight:800;line-height:1.2;letter-spacing:-0.5px}.unit{font-size:11px;color:var(--text-muted);font-weight:500}
+.status{display:inline-block;margin-top:6px;padding:2px 6px;border-radius:99px;font-size:10px;font-weight:700;background:#dcfce7;color:#166534}
+.status.warn{background:#fef3c7;color:#92400e}.status.danger{background:#fee2e2;color:#991b1b}
+.range-spec{font-size:11px;color:#94a3b8;margin-top:4px;font-weight:500}
+.muted{font-size:12px;color:var(--text-muted)}.section{margin-top:24px}.section-title{font-size:16px;font-weight:700;margin-bottom:12px;letter-spacing:-0.3px}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+.tab{border:1px solid var(--border);background:#fff;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;min-height:38px}
+.tab.active{background:#0f172a;color:#fff;border-color:#0f172a}
+
+.chart-wrap{height:280px;position:relative;touch-action:none;user-select:none;-webkit-user-select:none;}
+.chart-wrap canvas{width:100%;height:100%}
+.chart-tooltip{position:absolute;display:none;background:#0f172a;color:#fff;padding:8px 12px;border-radius:8px;font-size:11px;z-index:20;pointer-events:none;box-shadow:0 10px 15px -3px rgba(0,0,0,0.3);max-width:220px;white-space:normal;line-height:1.4}
+
+.sync-controller{background:#f1f5f9;border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin:16px 0;display:flex;align-items:center;gap:12px}
+.sync-controller label{font-size:13px;font-weight:700;color:var(--text-main);white-space:nowrap}
+.sync-controller input[type=range]{flex:1;cursor:pointer}
+
+.table-container{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:10px 8px;border:1px solid var(--border);text-align:center;white-space:nowrap}
+th{background:#f8fafc;color:var(--text-muted);font-weight:600}
+th.group-header{background:#f1f5f9;color:var(--text-main);font-weight:700;font-size:13px}
+.col-border{border-right:2.5px solid var(--group-border) !important}
+
+.calendar-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--border);border-radius:12px;overflow:hidden;table-layout:fixed}
+.weekday{padding:8px;background:#f8fafc;font-size:11px;font-weight:700;text-align:center;color:var(--text-muted);border-bottom:1px solid var(--border)}
+.cal-day{height:85px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:6px;background:#fff;cursor:pointer;overflow:hidden;display:flex;flex-direction:column}
+.cal-day:nth-child(7n){border-right:0}.cal-day.other{background:#fafafa;color:#cbd5e1}.cal-num{font-weight:700;font-size:11px}
+.record{font-size:10px;margin-top:4px;padding:3px 6px;border-radius:5px;background:#eff6ff;color:#1d4ed8;font-weight:600;border-left:3px solid var(--primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
+.event{background:#f3e8ff;color:#6b21a8;border-left-color:#9333ea}
+.empty{text-align:center;padding:30px;color:var(--text-muted);font-size:13px}
+.modal{position:fixed;inset:0;background:#00000066;backdrop-filter:blur(2px);display:none;align-items:center;justify-content:center;z-index:30;padding:16px}
+.modal-box{background:#fff;border-radius:16px;padding:20px;max-width:680px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 20px 25px -5px #00000010}
+.form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.form-grid label{font-size:12px;font-weight:600;color:var(--text-muted)}
+.form-grid input{width:100%;margin-top:4px}
+
+.alert{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.alert.danger{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
+.alert.warn{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
+.alert.ok{background:#dcfce7;color:#166534;border:1px solid #86efac}
+
+@media(max-width:950px){.grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){
+  .grid{grid-template-columns:repeat(2,1fr)}
+  .form-grid{grid-template-columns:repeat(2,1fr)}
+  .header-inner{flex-direction:row}
+  .toolbar{flex-direction:row;justify-content:space-between}
+  .btn{flex:1 1 auto}
+}
+</style>
+</head>
+<body>
+<header class="header">
+ <div class="header-inner">
+  <div class="title">🐩 미미 의료기록</div>
+  <button class="btn" onclick="openEvent()">＋ 이벤트</button>
+ </div>
+</header>
+
+<main class="container">
+ <div class="toolbar">
+  <button class="btn primary" onclick="openMedicalUpload(null, true)">✍️ 의료기록 등록</button>
+  <button class="btn" onclick="exportData()">💾 백업</button>
+  <button class="btn" onclick="document.getElementById('restoreInput').click()">📥 복원</button>
+  <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="importData(event)">
+  <label class="btn" style="margin-left:auto">기준일 <input id="asOf" type="date" onchange="render()"></label>
+ </div>
+
+ <div class="grid" id="cards"></div>
+
+ <section class="section">
+  <div class="section-title">📈 주요 검사 추이</div>
+  <div class="card">
+   <div class="tabs" id="metricTabs"></div>
+   <div class="chart-wrap" id="chartWrap">
+     <canvas id="chart"></canvas>
+     <div class="chart-tooltip" id="chartTooltip"></div>
+   </div>
+   <div id="chartInfo" class="muted" style="margin-top:8px"></div>
+  </div>
+
+  <div class="sync-controller">
+   <label>↔️ 타임라인 기간 이동 / 조절:</label>
+   <input type="range" id="viewRange" min="0" max="100" value="0" oninput="onRangeChange(this.value)">
+  </div>
+
+  <div class="section-title" style="margin-top:16px">🚩 이벤트 분포 차트</div>
+  <div class="card">
+   <div class="chart-wrap" id="eventChartWrap" style="height:180px">
+     <canvas id="eventChart"></canvas>
+     <div class="chart-tooltip" id="eventChartTooltip"></div>
+   </div>
+   <div class="muted" style="margin-top:8px">※ 발생한 이벤트의 종류별 분포 상황을 동기화하여 표시합니다.</div>
+  </div>
+
+  <div class="section-title" style="margin-top:16px">💧 음수 및 수액량 추이 차트</div>
+  <div class="card">
+   <div class="chart-wrap" id="fluidChartWrap" style="height:220px">
+     <canvas id="fluidChart"></canvas>
+     <div class="chart-tooltip" id="fluidChartTooltip"></div>
+   </div>
+   <div class="muted" style="margin-top:8px">※ 일자별 음수량, 수액량 및 두 항목의 합산 추이를 보여줍니다. (메모의 숫자 자동 감지)</div>
+  </div>
+ </section>
+
+ <section class="section">
+  <div class="section-title">⚠️ 현재 상태 및 추세</div>
+  <div class="card" id="riskBox"></div>
+ </section>
+
+ <section class="section">
+  <div class="section-title">🧪 전체 데이터</div>
+  <div class="card">
+   <div class="table-container">
+    <table>
+     <thead>
+      <tr>
+       <th class="group-header col-border">기본 정보</th>
+       <th colspan="4" class="group-header col-border">전해질</th>
+       <th colspan="3" class="group-header col-border">신장</th>
+       <th colspan="4" class="group-header col-border">산증</th>
+       <th class="group-header col-border">담낭</th>
+       <th colspan="2" class="group-header">기타 정보</th>
+      </tr>
+      <tr>
+       <th class="col-border">날짜</th>
+       <th>K</th><th>Na</th><th>Ca</th><th class="col-border">Cl</th>
+       <th>Cr</th><th>BUN</th><th class="col-border">Phos</th>
+       <th>HCO₃⁻</th><th>pH</th><th>BE</th><th class="col-border">AnGap(+)</th>
+       <th class="col-border">BIL</th>
+       <th class="col-border">검사기관</th>
+       <th>이벤트</th>
+      </tr>
+     </thead>
+     <tbody id="dataTable"></tbody>
+    </table>
+   </div>
+  </div>
+ </section>
+
+ <section class="section">
+  <div class="section-title">🗓️ 의료기록 캘린더</div>
+  <div class="card">
+   <div class="calendar-head">
+    <button class="btn" onclick="moveMonth(-1)">‹</button>
+    <strong id="monthTitle" style="font-size:15px"></strong>
+    <button class="btn" onclick="moveMonth(1)">›</button>
+   </div>
+   <div class="calendar" id="calendar"></div>
+  </div>
+ </section>
+</main>
+
+<div class="modal" id="medicalModal" onclick="if(event.target===this)closeModal('medicalModal')">
+ <div class="modal-box">
+  <h3 id="medicalModalTitle" style="margin-top:0;font-size:18px">의료기록 등록</h3>
+  <p class="muted">검사 날짜와 병원명을 입력하고 수치를 입력해주세요.</p>
+  
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+   <label style="font-size:12px;font-weight:600">의료기록 날짜<br><input id="medicalDate" type="date" style="width:100%;margin-top:4px"></label>
+   <label style="font-size:12px;font-weight:600">병원/기관명 (선택)<br><input id="hospitalName" style="width:100%;margin-top:4px" placeholder="예: 경기동물병원"></label>
+  </div>
+
+  <div class="form-grid">
+   <label>K (mmol/L)<input id="manualK" type="number" step="0.01" placeholder="3.5~5.5"></label>
+   <label>Na (mmol/L)<input id="manualNa" type="number" step="0.1" placeholder="140~155"></label>
+   <label>Ca (mg/dL)<input id="manualCa" type="number" step="0.1" placeholder="9.0~11.5"></label>
+   <label>Cl (mmol/L)<input id="manualCl" type="number" step="0.1" placeholder="105~120"></label>
+   
+   <label>Creatinine<input id="manualCr" type="number" step="0.01" placeholder="0.5~1.8"></label>
+   <label>BUN (mg/dL)<input id="manualBUN" type="number" step="0.1" placeholder="7~27"></label>
+   <label>Phosphorus<input id="manualPhos" type="number" step="0.1" placeholder="2.5~6.0"></label>
+   
+   <label>HCO₃⁻ (mmol/L)<input id="manualHCO3" type="number" step="0.1" placeholder="20~29"></label>
+   <label>pH<input id="manualPH" type="number" step="0.01" placeholder="7.35~7.45"></label>
+   <label>BE (mmol/L)<input id="manualBE" type="number" step="0.1" placeholder="-4~2"></label>
+   <label>AnGap(+)<input id="manualAnGap" type="number" step="0.1" placeholder="10~25"></label>
+   
+   <label>BIL (mg/dL)<input id="manualBIL" type="number" step="0.1" placeholder="0.1~0.5"></label>
+  </div>
+
+  <p style="margin-top:12px"><label style="font-size:12px;font-weight:600">추가 메모<br><textarea id="manualNote" style="width:100%;height:60px;margin-top:4px" placeholder="검사 특이사항 등 메모"></textarea></label></p>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">
+   <button class="btn danger" id="deleteLabBtn" style="display:none" onclick="deleteLabRecord()">의료기록 삭제</button>
+   <div style="margin-left:auto;display:flex;gap:8px">
+    <button class="btn" onclick="closeModal('medicalModal')">취소</button>
+    <button class="btn primary" onclick="saveManualMedicalRecord()">저장</button>
+   </div>
+  </div>
+ </div>
+</div>
+
+<div class="modal" id="eventModal" onclick="if(event.target===this)closeModal('eventModal')">
+ <div class="modal-box">
+  <h3 style="margin-top:0;font-size:18px">이벤트 기록</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+   <input id="eventDate" type="date">
+   <select id="eventType">
+    <option>이벤트</option>
+    <option>증상</option>
+    <option>식사</option>
+    <option>투약</option>
+    <option>음수</option>
+    <option>수액</option>
+    <option>응급상황</option>
+    <option>기타</option>
+   </select>
+  </div>
+  <p><input id="eventTitle" style="width:100%" placeholder="제목 입력 (예: 음수량 150ml)"></p>
+  <p><textarea id="eventMemo" style="width:100%;height:90px" placeholder="상세 내용 입력"></textarea></p>
+  <div style="text-align:right"><button class="btn" onclick="closeModal('eventModal')">취소</button> <button class="btn primary" onclick="saveEvent()">저장</button></div>
+ </div>
+</div>
+
+<div class="modal" id="dayModal" onclick="if(event.target===this)closeModal('dayModal')">
+ <div class="modal-box">
+  <h3 id="dayModalTitle" style="margin-top:0">날짜 상세</h3>
+  
+  <div style="margin-bottom:16px">
+   <div style="font-weight:700;font-size:14px;margin-bottom:8px">🧪 검사/의료기록</div>
+   <div id="dayLabBox"></div>
+  </div>
+
+  <div style="margin-bottom:16px">
+   <div style="font-weight:700;font-size:14px;margin-bottom:8px">📝 이벤트 목록</div>
+   <div id="dayEventList"></div>
+  </div>
+
+  <hr style="border:0;border-top:1px solid var(--border);margin:16px 0">
+  
+  <div id="eventEditSection">
+   <div style="font-weight:700;font-size:14px;margin-bottom:8px">✏️ 선택한 이벤트 수정</div>
+   <input id="editEventId" type="hidden">
+   <p><label>날짜<br><input id="editEventDate" type="date" style="width:100%"></label></p>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+    <label>종류<br>
+     <select id="editEventType" style="width:100%">
+      <option>이벤트</option>
+      <option>증상</option>
+      <option>식사</option>
+      <option>투약</option>
+      <option>음수</option>
+      <option>수액</option>
+      <option>응급상황</option>
+      <option>기타</option>
+     </select>
+    </label>
+    <label>제목<br><input id="editEventTitle" style="width:100%"></label>
+   </div>
+   <p><label>상세 내용<br><textarea id="editEventMemo" style="width:100%;height:80px"></textarea></label></p>
+   <div style="display:flex;justify-content:space-between">
+    <button class="btn danger" onclick="deleteEvent()">이벤트 삭제</button>
+    <div>
+     <button class="btn" onclick="closeModal('dayModal')">닫기</button>
+     <button class="btn primary" onclick="updateEvent()">수정 저장</button>
+    </div>
+   </div>
+  </div>
+ </div>
+</div>
+
+<script>
+const KEY="mimi_medical_db_v2_clean";
+let db=JSON.parse(localStorage.getItem(KEY)||"null")||{
+ profile:{name:"미미",species:"Poodle",weight:null},
+ labs:[],
+ events:[]
+};
+let metric="ALL",calDate=new Date();
+let windowOffset = 0; // 차트 스크롤 동기화 오프셋
+
+let labChartPoints = [];
+let eventChartPoints = [];
+let fluidChartPoints = [];
+
+document.getElementById("asOf").value=new Date().toISOString().slice(0,10);
+
+function save(){localStorage.setItem(KEY,JSON.stringify(db))}
+function fmt(v){return v==null||v===""?"—":v}
+function sortedLabs(){return [...db.labs].sort((a,b)=>a.date.localeCompare(b.date))}
+function latest(field){
+ const a=sortedLabs().filter(x=>x[field]!=null);
+ return a.length?a[a.length-1]:null
+}
+
+const ranges={
+ K:{low:3.5,high:5.5,dangerHigh:6.5,str:"3.5~5.5"},
+ Cr:{low:0.5,high:1.8,dangerHigh:3.0,str:"0.5~1.8"},
+ BUN:{low:7,high:27,dangerHigh:60,str:"7~27"},
+ HCO3:{low:20,high:29,dangerLow:16,str:"20~29"},
+ pH:{low:7.35,high:7.45,dangerLow:7.20,str:"7.35~7.45"},
+ Phos:{low:2.5,high:6.0,dangerHigh:8.0,str:"2.5~6.0"},
+ Na:{low:140,high:155,dangerHigh:165,str:"140~155"},
+ Ca:{low:9.0,high:11.5,dangerHigh:13.0,str:"9.0~11.5"},
+ Cl:{low:105,high:120,dangerHigh:130,str:"105~120"},
+ BE:{low:-4,high:2,dangerLow:-10,str:"-4~2"},
+ AnGap:{low:10,high:25,dangerHigh:30,str:"10~25"},
+ BIL:{low:0.1,high:0.5,dangerHigh:1.5,str:"0.1~0.5"}
+};
+
+function judge(field,v){
+ if(v==null||isNaN(v))return ["자료 없음",""];
+ let r=ranges[field];
+ if(!r)return ["판단 불가","warn"];
+ if((r.low!=null&&v<r.low)||(r.high!=null&&v>r.high)){
+   if((field==="K"&&v>=r.dangerHigh)||(field==="BUN"&&v>=r.dangerHigh)||
+      (field==="Cr"&&v>=r.dangerHigh)||(field==="HCO3"&&v<=r.dangerLow)||
+      (field==="pH"&&v<=r.dangerLow)||(field==="Phos"&&v>=r.dangerHigh)||
+      (field==="BIL"&&v>=r.dangerHigh)||(field==="AnGap"&&v>=r.dangerHigh))
+      return ["위험","danger"];
+   return ["주의","warn"];
+ }
+ return ["정상",""];
+}
+
+const allMetrics = [
+ ["K","칼륨 (K)","mmol/L","#2563eb"],
+ ["Na","나트륨 (Na)","mmol/L","#059669"],
+ ["Ca","칼슘 (Ca)","mg/dL","#d97706"],
+ ["Cl","염소 (Cl)","mmol/L","#7c3aed"],
+ ["Cr","Creatinine","mg/dL","#dc2626"],
+ ["BUN","BUN","mg/dL","#ea580c"],
+ ["Phos","Phosphorus","mg/dL","#0284c7"],
+ ["HCO3","HCO₃⁻","mmol/L","#16a34a"],
+ ["pH","pH","","#ca8a04"],
+ ["BE","BE","mmol/L","#9333ea"],
+ ["AnGap","AnGap(+)","mmol/L","#c026d3"],
+ ["BIL","빌리루빈 (BIL)","mg/dL","#e11d48"]
+];
+
+function getAllDatesSorted(){
+ const set = new Set([...db.labs.map(x=>x.date), ...db.events.map(x=>x.date)]);
+ return Array.from(set).sort();
+}
+
+function getVisibleDates(){
+ const dates = getAllDatesSorted();
+ if(!dates.length) return [];
+ const maxVisible = 10;
+ if(dates.length <= maxVisible) return dates;
+ 
+ const maxStart = dates.length - maxVisible;
+ const startIndex = Math.min(Math.floor((windowOffset / 100) * maxStart), maxStart);
+ return dates.slice(startIndex, startIndex + maxVisible);
+}
+
+function onRangeChange(val){
+ windowOffset = Number(val);
+ renderAllCharts();
+}
+
+function renderCards(){
+ document.getElementById("cards").innerHTML=allMetrics.map(([f,n,u])=>{
+   let x=latest(f),v=x?.[f],s=judge(f,v);
+   let rStr=ranges[f]?.str ? `정상 ${ranges[f].str}` : '';
+   return `<div class="card metric" onclick="selectMetric('${f}')">
+     <h3>${n}</h3>
+     <div class="value">${fmt(v)} <span class="unit">${u}</span></div>
+     <div><span class="status ${s[1]}">${s[0]}</span></div>
+     <div class="range-spec">${rStr}</div>
+     <div class="muted" style="margin-top:4px">${x?x.date:"기록 없음"}</div>
+   </div>`;
+ }).join("");
+}
+
+function selectMetric(m){metric=m;renderAllCharts()}
+
+function renderTabs(){
+ let html = `<button class="tab ${metric==='ALL'?'active':''}" onclick="selectMetric('ALL')">🌐 종합(트렌드)</button>`;
+ html += allMetrics.map(x=>`<button class="tab ${metric===x[0]?'active':''}" onclick="selectMetric('${x[0]}')">${x[0] === 'AnGap' ? 'AnGap(+)' : x[0]}</button>`).join("");
+ document.getElementById("metricTabs").innerHTML = html;
+}
+
+// 1. 주요 검사 추이 차트 (이벤트 삭제 버전)
+function renderLabChart(){
+ const c=document.getElementById("chart"),ctx=c.getContext("2d"),dpr=window.devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;
+ c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
+ labChartPoints = [];
+ const tooltip = document.getElementById("chartTooltip");
+ tooltip.style.display = "none";
+
+ const visibleDates = getVisibleDates();
+ const labs = sortedLabs().filter(x => visibleDates.includes(x.date));
+
+ if(!visibleDates.length || !labs.length){
+   document.getElementById("chartInfo").textContent="해당 기간의 검사 데이터가 없습니다.";
+   return;
+ }
+
+ const L=45,R=24,T=25,B=35,iw=w-L-R,ih=h-T-B;
+
+ if(metric === "ALL"){
+   const baselines = {};
+   allMetrics.forEach(([f]) => {
+     const validLabs = sortedLabs().filter(x => x[f] != null);
+     if(validLabs.length > 0) baselines[f] = validLabs[0][f];
+   });
+
+   let allTrendVals = [];
+   allMetrics.forEach(([f]) => {
+     labs.forEach(p => {
+       if(p[f] != null && baselines[f]) {
+         allTrendVals.push((p[f] / baselines[f]) * 100);
+       }
+     });
+   });
+
+   if(!allTrendVals.length) {
+     document.getElementById("chartInfo").textContent="비교 가능한 데이터가 없습니다.";
+     return;
+   }
+
+   let min = Math.min(...allTrendVals), max = Math.max(...allTrendVals);
+   if(min === max){ min -= 10; max += 10; }
+   min = Math.floor(min / 10) * 10;
+   max = Math.ceil(max / 10) * 10;
+
+   ctx.strokeStyle="#e2e8f0";ctx.lineWidth=1;
+   for(let i=0;i<5;i++){
+     let y=T+ih*i/4;
+     ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(w-R,y);ctx.stroke();
+     ctx.fillStyle="#64748b";ctx.font="10px sans-serif";
+     ctx.fillText(`${(max - (max - min) * i / 4).toFixed(0)}%`, 5, y+4);
+   }
+
+   allMetrics.forEach(([f, name, unit, color]) => {
+     const pts = labs.filter(x => x[f] != null);
+     if(!pts.length || !baselines[f]) return;
+
+     ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath();
+     pts.forEach((p, idx) => {
+       let dIdx = visibleDates.indexOf(p.date);
+       let x = L + (visibleDates.length === 1 ? iw/2 : iw * dIdx / (visibleDates.length - 1));
+       let pct = (p[f] / baselines[f]) * 100;
+       let y = T + ih * (max - pct) / (max - min);
+       idx === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+     });
+     ctx.stroke();
+
+     pts.forEach((p) => {
+       let dIdx = visibleDates.indexOf(p.date);
+       let x = L + (visibleDates.length === 1 ? iw/2 : iw * dIdx / (visibleDates.length - 1));
+       let pct = (p[f] / baselines[f]) * 100;
+       let y = T + ih * (max - pct) / (max - min);
+       ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI*2); ctx.fill();
+     });
+   });
+
+   visibleDates.forEach((d, i) => {
+     let x = L + (visibleDates.length === 1 ? iw/2 : iw * i / (visibleDates.length - 1));
+     ctx.fillStyle = "#475569"; ctx.font = "10px sans-serif";
+     ctx.fillText(d.slice(5), x - 14, h - 10);
+
+     const labData = labs.find(x => x.date === d) || {};
+     labChartPoints.push({ x, y: h/2, date: d, isAll: true, labData });
+   });
+
+   document.getElementById("chartInfo").innerHTML = `<b>📊 종합 트렌드 차트:</b> 상대적 등락 변동률(%)을 비교합니다.`;
+
+ } else {
+   const pts = labs.filter(x => x[metric] != null);
+   if(!pts.length){ document.getElementById("chartInfo").textContent = "선택 영역 내 수치가 없습니다."; return; }
+
+   let vals = pts.map(x => +x[metric]), min = Math.min(...vals), max = Math.max(...vals);
+   if(min === max){ min -= 1; max += 1; }
+
+   ctx.strokeStyle = "#e2e8f0"; ctx.lineWidth = 1;
+   for(let i = 0; i < 5; i++){
+     let y = T + ih * i / 4;
+     ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(w - R, y); ctx.stroke();
+     ctx.fillStyle = "#64748b"; ctx.font = "10px sans-serif";
+     ctx.fillText((max - (max - min) * i / 4).toFixed(1), 5, y + 4);
+   }
+
+   const mInfo = allMetrics.find(x => x[0] === metric) || [metric, metric, "", "#2563eb"];
+   ctx.strokeStyle = mInfo[3]; ctx.lineWidth = 2.5; ctx.beginPath();
+
+   pts.forEach((p, i) => {
+     let dIdx = visibleDates.indexOf(p.date);
+     let x = L + (visibleDates.length === 1 ? iw/2 : iw * dIdx / (visibleDates.length - 1));
+     let y = T + ih * (max - p[metric]) / (max - min);
+     i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+   });
+   ctx.stroke();
+
+   visibleDates.forEach((d, i) => {
+     let x = L + (visibleDates.length === 1 ? iw/2 : iw * i / (visibleDates.length - 1));
+     ctx.fillStyle = "#475569"; ctx.font = "10px sans-serif";
+     ctx.fillText(d.slice(5), x - 14, h - 10);
+   });
+
+   pts.forEach((p) => {
+     let dIdx = visibleDates.indexOf(p.date);
+     let x = L + (visibleDates.length === 1 ? iw/2 : iw * dIdx / (visibleDates.length - 1));
+     let y = T + ih * (max - p[metric]) / (max - min);
+
+     ctx.fillStyle = mInfo[3]; ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI*2); ctx.fill();
+     labChartPoints.push({ x, y, date: p.date, value: p[metric], isAll: false });
+   });
+
+   document.getElementById("chartInfo").textContent = `해당 기간 기록 수: ${pts.length}개 (${mInfo[2]})`;
+ }
+}
+
+// 2. 이벤트 분포 차트
+function renderEventChart(){
+ const c=document.getElementById("eventChart"),ctx=c.getContext("2d"),dpr=window.devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;
+ c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
+ eventChartPoints = [];
+
+ const visibleDates = getVisibleDates();
+ if(!visibleDates.length) return;
+
+ const L=45,R=24,T=20,B=35,iw=w-L-R,ih=h-T-B;
+ const categories = ["증상","식사","투약","음수","수액","응급상황","기타"];
+ const catColors = { "증상":"#ef4444", "식사":"#f59e0b", "투약":"#10b981", "음수":"#06b6d4", "수액":"#3b82f6", "응급상황":"#8b5cf6", "기타":"#64748b" };
+
+ ctx.strokeStyle="#f1f5f9";ctx.lineWidth=1;
+ visibleDates.forEach((d, i) => {
+   let x = L + (visibleDates.length === 1 ? iw/2 : iw * i / (visibleDates.length - 1));
+   ctx.beginPath(); ctx.moveTo(x, T); ctx.lineTo(x, h - B); ctx.stroke();
+   ctx.fillStyle = "#475569"; ctx.font = "10px sans-serif";
+   ctx.fillText(d.slice(5), x - 14, h - 10);
+ });
+
+ visibleDates.forEach((d, i) => {
+   let x = L + (visibleDates.length === 1 ? iw/2 : iw * i / (visibleDates.length - 1));
+   const dayEvents = db.events.filter(e => e.date === d);
+
+   dayEvents.forEach((ev, evIdx) => {
+     let catIdx = categories.indexOf(ev.type);
+     if(catIdx === -1) catIdx = 6;
+     let y = T + (ih / (categories.length - 1)) * catIdx;
+
+     let color = catColors[ev.type] || "#64748b";
+     ctx.fillStyle = color;
+     ctx.beginPath();
+     ctx.arc(x + (evIdx * 4 - (dayEvents.length*2)), y, 5, 0, Math.PI * 2);
+     ctx.fill();
+
+     eventChartPoints.push({ x, y, date: d, event: ev });
+   });
+ });
+}
+
+// 3. 음수/수액 통합 차트
+function parseFluidValue(str) {
+ if(!str) return 1;
+ const match = str.match(/(\d+(\.\d+)?)/);
+ return match ? parseFloat(match[1]) : 1;
+}
+
+function renderFluidChart(){
+ const c=document.getElementById("fluidChart"),ctx=c.getContext("2d"),dpr=window.devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;
+ c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
+ fluidChartPoints = [];
+
+ const visibleDates = getVisibleDates();
+ if(!visibleDates.length) return;
+
+ const L=45,R=24,T=25,B=35,iw=w-L-R,ih=h-T-B;
+
+ const fluidData = visibleDates.map(d => {
+   const evs = db.events.filter(e => e.date === d);
+   let drink = 0, fluid = 0;
+   evs.forEach(e => {
+     if(e.type === "음수") drink += parseFluidValue(e.title + " " + e.memo);
+     if(e.type === "수액") fluid += parseFluidValue(e.title + " " + e.memo);
+   });
+   return { date: d, drink, fluid, total: drink + fluid };
+ });
+
+ let maxVal = Math.max(...fluidData.map(d => d.total), 5);
+ maxVal = Math.ceil(maxVal / 5) * 5;
+
+ ctx.strokeStyle="#e2e8f0";ctx.lineWidth=1;
+ for(let i=0;i<4;i++){
+   let y=T+ih*i/3;
+   ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(w-R,y);ctx.stroke();
+   ctx.fillStyle="#64748b";ctx.font="10px sans-serif";
+   ctx.fillText((maxVal - (maxVal * i / 3)).toFixed(0), 5, y+4);
+ }
+
+ // 합계 (보라색 계열)
+ ctx.strokeStyle = "#8b5cf6"; ctx.lineWidth = 2; ctx.setLineDash([4, 4]); ctx.beginPath();
+ fluidData.forEach((d, i) => {
+   let x = L + (visibleDates.length === 1 ? iw/2 : iw * i / (visibleDates.length - 1));
+   let y = T + ih * (maxVal - d.total) / maxVal;
+   i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+ });
+ ctx.stroke(); ctx.setLineDash([]);
+
+ // 음수 (청록색)
+ ctx.strokeStyle = "#06b6d4"; ctx.lineWidth = 2; ctx.beginPath();
+ fluidData.forEach((d, i) => {
+   let x = L + (visibleDates.length === 1 ? iw/2 : iw * i / (visibleDates.length - 1));
+   let y = T + ih * (maxVal - d.drink) / maxVal;
+   i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+ });
+ ctx.stroke();
+
+ // 수액 (파란색)
+ ctx.strokeStyle = "#2563eb"; ctx.lineWidth = 2; ctx.beginPath();
+ fluidData.forEach((d, i) => {
+   let x = L + (visibleDates.length === 1 ? iw/2 : iw * i / (visibleDates.length - 1));
+   let y = T + ih * (maxVal - d.fluid) / maxVal;
+   i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+ });
+ ctx.stroke();
+
+ fluidData.forEach((d, i) => {
+   let x = L + (visibleDates.length === 1 ? iw/2 : iw * i / (visibleDates.length - 1));
+   ctx.fillStyle = "#475569"; ctx.font = "10px sans-serif";
+   ctx.fillText(d.date.slice(5), x - 14, h - 10);
+
+   let yTotal = T + ih * (maxVal - d.total) / maxVal;
+   let yDrink = T + ih * (maxVal - d.drink) / maxVal;
+   let yFluid = T + ih * (maxVal - d.fluid) / maxVal;
+
+   ctx.fillStyle = "#8b5cf6"; ctx.beginPath(); ctx.arc(x, yTotal, 3, 0, Math.PI*2); ctx.fill();
+   ctx.fillStyle = "#06b6d4"; ctx.beginPath(); ctx.arc(x, yDrink, 3, 0, Math.PI*2); ctx.fill();
+   ctx.fillStyle = "#2563eb"; ctx.beginPath(); ctx.arc(x, yFluid, 3, 0, Math.PI*2); ctx.fill();
+
+   fluidChartPoints.push({ x, date: d.date, drink: d.drink, fluid: d.fluid, total: d.total });
+ });
+}
+
+function renderAllCharts(){
+ renderTabs();
+ renderLabChart();
+ renderEventChart();
+ renderFluidChart();
+}
+
+// 툴팁 이벤트 바인딩
+function setupTooltip(wrapId, tooltipId, getPoints, renderTooltipContent) {
+ const wrap = document.getElementById(wrapId);
+ const tooltip = document.getElementById(tooltipId);
+
+ const handlePointer = (e) => {
+   const points = getPoints();
+   if (!points.length) return;
+   const rect = wrap.getBoundingClientRect();
+   const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+   const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+   const x = clientX - rect.left;
+
+   let found = null, minDist = 30;
+   points.forEach(p => {
+     let dist = Math.abs(x - p.x);
+     if (dist < minDist) { minDist = dist; found = p; }
+   });
+
+   if (found) {
+     tooltip.innerHTML = renderTooltipContent(found);
+     tooltip.style.display = "block";
+     let left = found.x + 10;
+     if (left + 200 > rect.width) left = found.x - 210;
+     tooltip.style.left = left + "px";
+     tooltip.style.top = "20px";
+   } else {
+     tooltip.style.display = "none";
+   }
+ };
+
+ wrap.addEventListener("mousemove", handlePointer);
+ wrap.addEventListener("mouseleave", () => { tooltip.style.display = "none"; });
+ wrap.addEventListener("touchstart", handlePointer, {passive: true});
+ wrap.addEventListener("touchmove", handlePointer, {passive: true});
+}
+
+setupTooltip("chartWrap", "chartTooltip", () => labChartPoints, p => {
+ let html = `<b>${p.date}</b><br>`;
+ if(p.isAll) {
+   html += `<div style="margin-top:4px;font-size:10px;display:grid;grid-template-columns:1fr 1fr;gap:2px">`;
+   allMetrics.forEach(([f]) => {
+     if(p.labData[f] != null) html += `<span>${f}: <b>${p.labData[f]}</b></span>`;
+   });
+   html += `</div>`;
+ } else {
+   html += `${metric}: <b>${p.value}</b>`;
+ }
+ return html;
+});
+
+setupTooltip("eventChartWrap", "eventChartTooltip", () => eventChartPoints, p => {
+ return `<b>${p.date}</b><br>• [${p.event.type}] ${p.event.title}<br><span style="font-size:10px;color:#cbd5e1">${p.event.memo||""}</span>`;
+});
+
+setupTooltip("fluidChartWrap", "fluidChartTooltip", () => fluidChartPoints, p => {
+ return `<b>${p.date}</b><br>💧 음수량: <b>${p.drink}</b><br>💉 수액량: <b>${p.fluid}</b><br>📊 <b>합계: ${p.total}</b>`;
+});
+
+function renderRisk(){
+ let out=[];
+ allMetrics.forEach(([f,n])=>{let x=latest(f);if(x){let j=judge(f,x[f]);if(j[0]==="위험")out.push(`<div class="alert danger">🔴 <b>${n}: 위험 수치</b> — ${x[f]} (${x.date})</div>`);else if(j[0]==="주의")out.push(`<div class="alert warn">🟠 <b>${n}: 주의 필요</b> — ${x[f]} (${x.date})</div>`)}});
+ if(!out.length)out.push(`<div class="alert ok">🟢 정상범위를 이탈한 주요 검사 항목이 없습니다.</div>`);
+ document.getElementById("riskBox").innerHTML=out.join("");
+}
+
+function renderTable(){
+ const dates=[...new Set([
+   ...db.labs.map(x=>x.date),
+   ...db.events.map(x=>x.date)
+ ])].sort().reverse();
+ document.getElementById("dataTable").innerHTML=dates.length?dates.map(date=>{
+   const labs=db.labs.filter(x=>x.date===date);
+   const ev=db.events.filter(x=>x.date===date);
+   const x=labs[0]||{};
+   const eventText=ev.length?ev.map(e=>`${e.type||"이벤트"}: ${e.title||"기록"}`).join(" / "):"—";
+   return `<tr>
+    <td class="col-border"><b>${date}</b></td>
+    <td>${fmt(x.K)}</td><td>${fmt(x.Na)}</td><td>${fmt(x.Ca)}</td><td class="col-border">${fmt(x.Cl)}</td>
+    <td>${fmt(x.Cr)}</td><td>${fmt(x.BUN)}</td><td class="col-border">${fmt(x.Phos)}</td>
+    <td>${fmt(x.HCO3)}</td><td>${fmt(x.pH)}</td><td>${fmt(x.BE)}</td><td class="col-border">${fmt(x.AnGap)}</td>
+    <td class="col-border">${fmt(x.BIL)}</td>
+    <td class="col-border">${x.hospital||"—"}</td>
+    <td style="text-align:left">${eventText}</td>
+   </tr>`;
+ }).join(""):`<tr><td colspan="15" class="empty">데이터가 비어 있습니다.</td></tr>`;
+}
+
+function dateKey(d){return d.toISOString().slice(0,10)}
+function renderCalendar(){
+ const y=calDate.getFullYear(),m=calDate.getMonth(),first=new Date(y,m,1),start=first.getDay(),days=new Date(y,m+1,0).getDate();
+ document.getElementById("monthTitle").textContent=`${y}년 ${m+1}월`;
+ let cells=[];
+ for(let i=0;i<start;i++)cells.push({n:new Date(y,m,0).getDate()-start+1+i,other:true,date:new Date(y,m-1,new Date(y,m,0).getDate()-start+1+i)});
+ for(let d=1;d<=days;d++)cells.push({n:d,other:false,date:new Date(y,m,d)});
+ while(cells.length<42){let d=cells.length-(start+days)+1;cells.push({n:d,other:true,date:new Date(y,m+1,d)})}
+ let head=["일","월","화","수","목","금","토"].map(x=>`<div class="weekday">${x}</div>`).join("");
+ let body=cells.map(c=>{
+   let ds=dateKey(c.date),labs=db.labs.filter(x=>x.date===ds),ev=db.events.filter(x=>x.date===ds);
+   let records=[];
+   labs.forEach(x=>records.push(`<div class="record">${x.hospital?x.hospital:"검사"}</div>`));
+   ev.forEach(x=>records.push(`<div class="record event">${x.title||"이벤트"}</div>`));
+   return `<div class="cal-day ${c.other?'other':''}" onclick="openDayEvents('${ds}')"><div class="cal-num">${c.n}</div>${records.join("")}</div>`;
+ }).join("");
+ document.getElementById("calendar").innerHTML=head+body;
+}
+function moveMonth(n){calDate.setMonth(calDate.getMonth()+n);renderCalendar()}
+
+function openMedicalUpload(targetDate, forceNew = false){
+ closeModal('dayModal');
+ document.getElementById("medicalModal").style.display="flex";
+ const dateToUse = targetDate || document.getElementById("asOf").value || dateKey(new Date());
+ document.getElementById("medicalDate").value = dateToUse;
+ 
+ const lab = forceNew ? null : db.labs.find(x => x.date === dateToUse);
+ const deleteBtn = document.getElementById("deleteLabBtn");
+ 
+ if(lab) {
+   document.getElementById("medicalModalTitle").textContent = "의료기록 수정";
+   document.getElementById("hospitalName").value = lab.hospital || "";
+   deleteBtn.style.display = "inline-block";
+   
+   const setVal = (id, k) => { document.getElementById(id).value = lab[k] != null ? lab[k] : ""; };
+   setVal("manualK", "K");
+   setVal("manualCr", "Cr");
+   setVal("manualBUN", "BUN");
+   setVal("manualHCO3", "HCO3");
+   setVal("manualPH", "pH");
+   setVal("manualPhos", "Phos");
+   setVal("manualNa", "Na");
+   setVal("manualCa", "Ca");
+   setVal("manualCl", "Cl");
+   setVal("manualBE", "BE");
+   setVal("manualAnGap", "AnGap");
+   setVal("manualBIL", "BIL");
+   document.getElementById("manualNote").value = lab.note || "";
+ } else {
+   document.getElementById("medicalModalTitle").textContent = "의료기록 등록";
+   document.getElementById("hospitalName").value = "";
+   deleteBtn.style.display = "none";
+   ["manualK","manualCr","manualBUN","manualHCO3","manualPH","manualPhos","manualNa","manualCa","manualCl","manualBE","manualAnGap","manualBIL","manualNote"].forEach(id=>document.getElementById(id).value="");
+ }
+}
+
+function deleteLabRecord(){
+ const date = document.getElementById("medicalDate").value;
+ if(!date) return;
+ if(!confirm(`${date} 의료기록을 삭제할까요?`)) return;
+ db.labs = db.labs.filter(x => x.date !== date);
+ save(); render();
+ closeModal("medicalModal");
+ closeModal("dayModal");
+}
+
+function openEvent(date){
+ document.getElementById("eventModal").style.display="flex";
+ document.getElementById("eventDate").value=date||dateKey(new Date());
+ document.getElementById("eventTitle").value="";
+ document.getElementById("eventMemo").value="";
+}
+function closeModal(id){document.getElementById(id).style.display="none"}
+
+function saveEvent(){
+ const date=document.getElementById("eventDate").value,title=document.getElementById("eventTitle").value||"이벤트";
+ db.events.push({id:Date.now()+Math.random(),date,type:document.getElementById("eventType").value,title,memo:document.getElementById("eventMemo").value});
+ save();closeModal("eventModal");render();
+}
+
+function openDayEvents(date){
+ document.getElementById("dayModalTitle").textContent=`${date} 상세`;
+ 
+ const lab = db.labs.find(x => x.date === date);
+ const labBox = document.getElementById("dayLabBox");
+ if(lab) {
+   labBox.innerHTML = `
+     <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:12px">
+       <div>
+         <b>🏥 ${lab.hospital || "의료기관"}</b>
+         <div class="muted" style="margin-top:4px">K ${fmt(lab.K)} | Cr ${fmt(lab.Cr)} | BUN ${fmt(lab.BUN)}</div>
+       </div>
+       <button class="btn" onclick="openMedicalUpload('${date}')">✏️ 수정</button>
+     </div>`;
+ } else {
+   labBox.innerHTML = `
+     <div class="empty" style="padding:12px">
+       등록된 의료기록이 없습니다. 
+       <button class="btn primary" style="margin-left:8px;padding:4px 10px;min-height:32px;font-size:12px" onclick="openMedicalUpload('${date}', true)">＋ 의료기록 추가</button>
+     </div>`;
+ }
+
+ const events=db.events.filter(e=>e.date===date);
+ const list=document.getElementById("dayEventList");
+ const editSec=document.getElementById("eventEditSection");
+ 
+ if(!events.length){
+   list.innerHTML=`<div class="empty" style="padding:12px">등록된 이벤트가 없습니다.</div>`;
+   editSec.style.display="none";
+   document.getElementById("editEventId").value="";
+ }else{
+   editSec.style.display="block";
+   list.innerHTML=events.map(e=>`
+    <div class="card" style="margin-bottom:8px;cursor:pointer" onclick="selectEventForEdit('${e.id}')">
+      <b>${e.title||"이벤트"}</b> <span class="muted">[${e.type||"이벤트"}]</span>
+      <div class="muted" style="margin-top:4px">${e.memo||"내용 없음"}</div>
+    </div>`).join("");
+   selectEventForEdit(events[0].id);
+ }
+ document.getElementById("dayModal").style.display="flex";
+}
+
+function selectEventForEdit(id){
+ const e=db.events.find(x=>String(x.id)===String(id)); if(!e)return;
+ document.getElementById("editEventId").value=e.id;
+ document.getElementById("editEventDate").value=e.date;
+ document.getElementById("editEventType").value=e.type||"이벤트";
+ document.getElementById("editEventTitle").value=e.title||"";
+ document.getElementById("editEventMemo").value=e.memo||"";
+}
+
+function updateEvent(){
+ const id=document.getElementById("editEventId").value;
+ const e=db.events.find(x=>String(x.id)===String(id)); if(!e)return;
+ e.date=document.getElementById("editEventDate").value;
+ e.type=document.getElementById("editEventType").value;
+ e.title=document.getElementById("editEventTitle").value||"이벤트";
+ e.memo=document.getElementById("editEventMemo").value;
+ save();closeModal("dayModal");render();
+}
+
+function deleteEvent(){
+ const id=document.getElementById("editEventId").value;
+ if(!id)return;
+ if(!confirm("이 이벤트를 삭제할까요?"))return;
+ db.events=db.events.filter(x=>String(x.id)!==String(id));
+ save();closeModal("dayModal");render();
+}
+
+function saveManualMedicalRecord(){
+ const date=document.getElementById("medicalDate").value;
+ const hospital=document.getElementById("hospitalName").value.trim();
+ const num=id=>{const v=document.getElementById(id).value;return v===""?null:Number(v)};
+ 
+ const rec={
+   date,
+   hospital:hospital||"의료기관",
+   K:num("manualK"),
+   Cr:num("manualCr"),
+   BUN:num("manualBUN"),
+   HCO3:num("manualHCO3"),
+   pH:num("manualPH"),
+   Phos:num("manualPhos"),
+   Na:num("manualNa"),
+   Ca:num("manualCa"),
+   Cl:num("manualCl"),
+   BE:num("manualBE"),
+   AnGap:num("manualAnGap"),
+   BIL:num("manualBIL"),
+   note:document.getElementById("manualNote").value||"수기 입력"
+ };
+ 
+ const count=["K","Cr","BUN","HCO3","pH","Phos","Na","Ca","Cl","BE","AnGap","BIL"].filter(k=>rec[k]!=null).length;
+ if(!count){alert("최소 하나의 수치를 입력해주세요.");return}
+ 
+ const idx=db.labs.findIndex(x=>x.date===date);
+ if(idx>=0)db.labs[idx]={...db.labs[idx],...rec};
+ else db.labs.push(rec);
+ 
+ save();render();
+ closeModal("medicalModal");
+ closeModal("dayModal");
+}
+
+function exportData(){
+ const blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"});
+ const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`mimi_medical_${dateKey(new Date())}.json`;a.click();URL.revokeObjectURL(a.href);
+}
+
+function importData(e){
+ const file=e.target.files[0];
+ if(!file)return;
+ const reader=new FileReader();
+ reader.onload=function(evt){
+   try{
+     const parsed=JSON.parse(evt.target.result);
+     if(parsed.labs&&parsed.events){
+       db=parsed;save();render();alert("복원되었습니다.");
+     }else{
+       alert("올바르지 않은 파일 형식입니다.");
+     }
+   }catch(err){
+     alert("오류가 발생했습니다.");
+   }
+ };
+ reader.readAsText(file);
+}
+
+function render(){renderCards();renderAllCharts();renderRisk();renderTable();renderCalendar()}
+render();
+</script>
+</body>
+</html>
