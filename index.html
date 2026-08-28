@@ -78,6 +78,9 @@ th.group-header{background:#f1f5f9;color:var(--text-main);font-weight:700;font-s
 .alert.warn{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
 .alert.ok{background:#dcfce7;color:#166534;border:1px solid #86efac}
 
+#syncBadge{font-size:11px;padding:4px 8px;border-radius:12px;background:#e2e8f0;color:#475569;font-weight:600}
+#syncBadge.online{background:#dcfce7;color:#166534}
+
 @media(max-width:950px){.grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:600px){
   .grid{grid-template-columns:repeat(2,1fr)}
@@ -91,7 +94,10 @@ th.group-header{background:#f1f5f9;color:var(--text-main);font-weight:700;font-s
 <body>
 <header class="header">
  <div class="header-inner">
-  <div class="title">🐩 미미 의료기록</div>
+  <div class="title" style="display:flex;align-items:center;gap:8px">
+    🐩 미미 의료기록 
+    <span id="syncBadge">연동 중...</span>
+  </div>
   <button class="btn" onclick="openEvent()">＋ 이벤트</button>
  </div>
 </header>
@@ -299,15 +305,61 @@ th.group-header{background:#f1f5f9;color:var(--text-main);font-weight:700;font-s
  </div>
 </div>
 
-<script>
-const KEY="mimi_medical_db_v2_clean";
-let db=JSON.parse(localStorage.getItem(KEY)||"null")||{
- profile:{name:"미미",species:"Poodle",weight:null},
- labs:[],
- events:[]
+<!-- Firebase SDK (v10 모듈) -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+// ⚠️ 아래 firebaseConfig 객체에 Firebase 콘솔에서 발급받은 본인 프로젝트의 키 정보를 넣으세요.
+const firebaseConfig = {
+  apiKey: "AIzaSyB7YRG0l2PFXbCFaNb_6OCXo-wQup-CChc",
+  authDomain: "mimi-a0134.firebaseapp.com",
+  databaseURL: "https://mimi-a0134-default-rtdb.firebaseio.com",
+  projectId: "mimi-a0134",
+  storageBucket: "mimi-a0134.firebasestorage.app",
+  messagingSenderId: "179296309633",
+  appId: "1:179296309633:web:73a5d4276bb5e96185d880",
+  measurementId: "G-72X43NKJR0"
 };
+
+const app = initializeApp(firebaseConfig);
+const firebaseDb = getDatabase(app);
+
+window.db = {
+ profile: { name: "미미", species: "Poodle", weight: null },
+ labs: [],
+ events: []
+};
+
+// 데이터 저장 (Firebase 동기화)
+window.save = function() {
+  set(ref(firebaseDb, 'mimi_medical_data'), window.db)
+    .catch(err => console.error("Firebase 저장 오류:", err));
+};
+
+// 실시간 데이터 수신 (상대방 입력 시 내 화면도 자동 갱신)
+const dataRef = ref(firebaseDb, 'mimi_medical_data');
+onValue(dataRef, (snapshot) => {
+  const val = snapshot.val();
+  const badge = document.getElementById("syncBadge");
+  if(val) {
+    window.db = {
+      profile: val.profile || { name: "미미" },
+      labs: val.labs || [],
+      events: val.events || []
+    };
+  }
+  if(badge) {
+    badge.textContent = "🟢 실시간 동기화됨";
+    badge.classList.add("online");
+  }
+  render();
+});
+</script>
+
+<script>
 let metric="ALL",calDate=new Date();
-let windowOffset = 0; // 차트 스크롤 동기화 오프셋
+let windowOffset = 0;
 
 let labChartPoints = [];
 let eventChartPoints = [];
@@ -315,9 +367,8 @@ let fluidChartPoints = [];
 
 document.getElementById("asOf").value=new Date().toISOString().slice(0,10);
 
-function save(){localStorage.setItem(KEY,JSON.stringify(db))}
 function fmt(v){return v==null||v===""?"—":v}
-function sortedLabs(){return [...db.labs].sort((a,b)=>a.date.localeCompare(b.date))}
+function sortedLabs(){return [...(window.db.labs||[])].sort((a,b)=>a.date.localeCompare(b.date))}
 function latest(field){
  const a=sortedLabs().filter(x=>x[field]!=null);
  return a.length?a[a.length-1]:null
@@ -369,7 +420,7 @@ const allMetrics = [
 ];
 
 function getAllDatesSorted(){
- const set = new Set([...db.labs.map(x=>x.date), ...db.events.map(x=>x.date)]);
+ const set = new Set([...(window.db.labs||[]).map(x=>x.date), ...(window.db.events||[]).map(x=>x.date)]);
  return Array.from(set).sort();
 }
 
@@ -411,7 +462,6 @@ function renderTabs(){
  document.getElementById("metricTabs").innerHTML = html;
 }
 
-// 1. 주요 검사 추이 차트 (이벤트 삭제 버전)
 function renderLabChart(){
  const c=document.getElementById("chart"),ctx=c.getContext("2d"),dpr=window.devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;
  c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
@@ -542,7 +592,6 @@ function renderLabChart(){
  }
 }
 
-// 2. 이벤트 분포 차트
 function renderEventChart(){
  const c=document.getElementById("eventChart"),ctx=c.getContext("2d"),dpr=window.devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;
  c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
@@ -565,7 +614,7 @@ function renderEventChart(){
 
  visibleDates.forEach((d, i) => {
    let x = L + (visibleDates.length === 1 ? iw/2 : iw * i / (visibleDates.length - 1));
-   const dayEvents = db.events.filter(e => e.date === d);
+   const dayEvents = (window.db.events||[]).filter(e => e.date === d);
 
    dayEvents.forEach((ev, evIdx) => {
      let catIdx = categories.indexOf(ev.type);
@@ -583,7 +632,6 @@ function renderEventChart(){
  });
 }
 
-// 3. 음수/수액 통합 차트
 function parseFluidValue(str) {
  if(!str) return 1;
  const match = str.match(/(\d+(\.\d+)?)/);
@@ -601,7 +649,7 @@ function renderFluidChart(){
  const L=45,R=24,T=25,B=35,iw=w-L-R,ih=h-T-B;
 
  const fluidData = visibleDates.map(d => {
-   const evs = db.events.filter(e => e.date === d);
+   const evs = (window.db.events||[]).filter(e => e.date === d);
    let drink = 0, fluid = 0;
    evs.forEach(e => {
      if(e.type === "음수") drink += parseFluidValue(e.title + " " + e.memo);
@@ -621,7 +669,6 @@ function renderFluidChart(){
    ctx.fillText((maxVal - (maxVal * i / 3)).toFixed(0), 5, y+4);
  }
 
- // 합계 (보라색 계열)
  ctx.strokeStyle = "#8b5cf6"; ctx.lineWidth = 2; ctx.setLineDash([4, 4]); ctx.beginPath();
  fluidData.forEach((d, i) => {
    let x = L + (visibleDates.length === 1 ? iw/2 : iw * i / (visibleDates.length - 1));
@@ -630,7 +677,6 @@ function renderFluidChart(){
  });
  ctx.stroke(); ctx.setLineDash([]);
 
- // 음수 (청록색)
  ctx.strokeStyle = "#06b6d4"; ctx.lineWidth = 2; ctx.beginPath();
  fluidData.forEach((d, i) => {
    let x = L + (visibleDates.length === 1 ? iw/2 : iw * i / (visibleDates.length - 1));
@@ -639,7 +685,6 @@ function renderFluidChart(){
  });
  ctx.stroke();
 
- // 수액 (파란색)
  ctx.strokeStyle = "#2563eb"; ctx.lineWidth = 2; ctx.beginPath();
  fluidData.forEach((d, i) => {
    let x = L + (visibleDates.length === 1 ? iw/2 : iw * i / (visibleDates.length - 1));
@@ -672,7 +717,6 @@ function renderAllCharts(){
  renderFluidChart();
 }
 
-// 툴팁 이벤트 바인딩
 function setupTooltip(wrapId, tooltipId, getPoints, renderTooltipContent) {
  const wrap = document.getElementById(wrapId);
  const tooltip = document.getElementById(tooltipId);
@@ -682,7 +726,6 @@ function setupTooltip(wrapId, tooltipId, getPoints, renderTooltipContent) {
    if (!points.length) return;
    const rect = wrap.getBoundingClientRect();
    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-   const clientY = e.touches ? e.touches[0].clientY : e.clientY;
    const x = clientX - rect.left;
 
    let found = null, minDist = 30;
@@ -740,12 +783,12 @@ function renderRisk(){
 
 function renderTable(){
  const dates=[...new Set([
-   ...db.labs.map(x=>x.date),
-   ...db.events.map(x=>x.date)
+   ...(window.db.labs||[]).map(x=>x.date),
+   ...(window.db.events||[]).map(x=>x.date)
  ])].sort().reverse();
  document.getElementById("dataTable").innerHTML=dates.length?dates.map(date=>{
-   const labs=db.labs.filter(x=>x.date===date);
-   const ev=db.events.filter(x=>x.date===date);
+   const labs=(window.db.labs||[]).filter(x=>x.date===date);
+   const ev=(window.db.events||[]).filter(x=>x.date===date);
    const x=labs[0]||{};
    const eventText=ev.length?ev.map(e=>`${e.type||"이벤트"}: ${e.title||"기록"}`).join(" / "):"—";
    return `<tr>
@@ -770,7 +813,7 @@ function renderCalendar(){
  while(cells.length<42){let d=cells.length-(start+days)+1;cells.push({n:d,other:true,date:new Date(y,m+1,d)})}
  let head=["일","월","화","수","목","금","토"].map(x=>`<div class="weekday">${x}</div>`).join("");
  let body=cells.map(c=>{
-   let ds=dateKey(c.date),labs=db.labs.filter(x=>x.date===ds),ev=db.events.filter(x=>x.date===ds);
+   let ds=dateKey(c.date),labs=(window.db.labs||[]).filter(x=>x.date===ds),ev=(window.db.events||[]).filter(x=>x.date===ds);
    let records=[];
    labs.forEach(x=>records.push(`<div class="record">${x.hospital?x.hospital:"검사"}</div>`));
    ev.forEach(x=>records.push(`<div class="record event">${x.title||"이벤트"}</div>`));
@@ -786,7 +829,7 @@ function openMedicalUpload(targetDate, forceNew = false){
  const dateToUse = targetDate || document.getElementById("asOf").value || dateKey(new Date());
  document.getElementById("medicalDate").value = dateToUse;
  
- const lab = forceNew ? null : db.labs.find(x => x.date === dateToUse);
+ const lab = forceNew ? null : (window.db.labs||[]).find(x => x.date === dateToUse);
  const deleteBtn = document.getElementById("deleteLabBtn");
  
  if(lab) {
@@ -820,10 +863,8 @@ function deleteLabRecord(){
  const date = document.getElementById("medicalDate").value;
  if(!date) return;
  if(!confirm(`${date} 의료기록을 삭제할까요?`)) return;
- db.labs = db.labs.filter(x => x.date !== date);
- save(); render();
- closeModal("medicalModal");
- closeModal("dayModal");
+ window.db.labs = (window.db.labs||[]).filter(x => x.date !== date);
+ window.save(); closeModal("medicalModal"); closeModal("dayModal");
 }
 
 function openEvent(date){
@@ -836,14 +877,15 @@ function closeModal(id){document.getElementById(id).style.display="none"}
 
 function saveEvent(){
  const date=document.getElementById("eventDate").value,title=document.getElementById("eventTitle").value||"이벤트";
- db.events.push({id:Date.now()+Math.random(),date,type:document.getElementById("eventType").value,title,memo:document.getElementById("eventMemo").value});
- save();closeModal("eventModal");render();
+ if(!window.db.events) window.db.events = [];
+ window.db.events.push({id:Date.now()+Math.random(),date,type:document.getElementById("eventType").value,title,memo:document.getElementById("eventMemo").value});
+ window.save();closeModal("eventModal");
 }
 
 function openDayEvents(date){
  document.getElementById("dayModalTitle").textContent=`${date} 상세`;
  
- const lab = db.labs.find(x => x.date === date);
+ const lab = (window.db.labs||[]).find(x => x.date === date);
  const labBox = document.getElementById("dayLabBox");
  if(lab) {
    labBox.innerHTML = `
@@ -862,7 +904,7 @@ function openDayEvents(date){
      </div>`;
  }
 
- const events=db.events.filter(e=>e.date===date);
+ const events=(window.db.events||[]).filter(e=>e.date===date);
  const list=document.getElementById("dayEventList");
  const editSec=document.getElementById("eventEditSection");
  
@@ -883,7 +925,7 @@ function openDayEvents(date){
 }
 
 function selectEventForEdit(id){
- const e=db.events.find(x=>String(x.id)===String(id)); if(!e)return;
+ const e=(window.db.events||[]).find(x=>String(x.id)===String(id)); if(!e)return;
  document.getElementById("editEventId").value=e.id;
  document.getElementById("editEventDate").value=e.date;
  document.getElementById("editEventType").value=e.type||"이벤트";
@@ -893,20 +935,20 @@ function selectEventForEdit(id){
 
 function updateEvent(){
  const id=document.getElementById("editEventId").value;
- const e=db.events.find(x=>String(x.id)===String(id)); if(!e)return;
+ const e=(window.db.events||[]).find(x=>String(x.id)===String(id)); if(!e)return;
  e.date=document.getElementById("editEventDate").value;
  e.type=document.getElementById("editEventType").value;
  e.title=document.getElementById("editEventTitle").value||"이벤트";
  e.memo=document.getElementById("editEventMemo").value;
- save();closeModal("dayModal");render();
+ window.save();closeModal("dayModal");
 }
 
 function deleteEvent(){
  const id=document.getElementById("editEventId").value;
  if(!id)return;
  if(!confirm("이 이벤트를 삭제할까요?"))return;
- db.events=db.events.filter(x=>String(x.id)!==String(id));
- save();closeModal("dayModal");render();
+ window.db.events=(window.db.events||[]).filter(x=>String(x.id)!==String(id));
+ window.save();closeModal("dayModal");
 }
 
 function saveManualMedicalRecord(){
@@ -935,17 +977,18 @@ function saveManualMedicalRecord(){
  const count=["K","Cr","BUN","HCO3","pH","Phos","Na","Ca","Cl","BE","AnGap","BIL"].filter(k=>rec[k]!=null).length;
  if(!count){alert("최소 하나의 수치를 입력해주세요.");return}
  
- const idx=db.labs.findIndex(x=>x.date===date);
- if(idx>=0)db.labs[idx]={...db.labs[idx],...rec};
- else db.labs.push(rec);
+ if(!window.db.labs) window.db.labs = [];
+ const idx=window.db.labs.findIndex(x=>x.date===date);
+ if(idx>=0)window.db.labs[idx]={...window.db.labs[idx],...rec};
+ else window.db.labs.push(rec);
  
- save();render();
+ window.save();
  closeModal("medicalModal");
  closeModal("dayModal");
 }
 
 function exportData(){
- const blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"});
+ const blob=new Blob([JSON.stringify(window.db,null,2)],{type:"application/json"});
  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`mimi_medical_${dateKey(new Date())}.json`;a.click();URL.revokeObjectURL(a.href);
 }
 
@@ -957,7 +1000,7 @@ function importData(e){
    try{
      const parsed=JSON.parse(evt.target.result);
      if(parsed.labs&&parsed.events){
-       db=parsed;save();render();alert("복원되었습니다.");
+       window.db=parsed;window.save();alert("복원되었습니다.");
      }else{
        alert("올바르지 않은 파일 형식입니다.");
      }
@@ -969,7 +1012,6 @@ function importData(e){
 }
 
 function render(){renderCards();renderAllCharts();renderRisk();renderTable();renderCalendar()}
-render();
 </script>
 </body>
 </html>
