@@ -633,21 +633,34 @@ function renderLabChart(){
      if(!pts.length || !baselines[f]) return;
 
      ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath();
+     const coords = [];
      pts.forEach((p, idx) => {
        let dIdx = visibleDates.indexOf(p.date);
        let x = L + (visibleDates.length === 1 ? iw/2 : iw * dIdx / (visibleDates.length - 1));
        let pct = (p[f] / baselines[f]) * 100;
        let y = T + ih * (max - pct) / (max - min);
+       coords.push({x, y});
        idx === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
      });
      ctx.stroke();
 
-     pts.forEach((p) => {
-       let dIdx = visibleDates.indexOf(p.date);
-       let x = L + (visibleDates.length === 1 ? iw/2 : iw * dIdx / (visibleDates.length - 1));
-       let pct = (p[f] / baselines[f]) * 100;
-       let y = T + ih * (max - pct) / (max - min);
-       ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, 2.5, 0, Math.PI*2); ctx.fill();
+     // 각 점 그리기 및 선 중간에 항목 이름(명찰) 표기
+     coords.forEach((coord, idx) => {
+       ctx.fillStyle = color; ctx.beginPath(); ctx.arc(coord.x, coord.y, 2.5, 0, Math.PI*2); ctx.fill();
+
+       // 선의 중간 지점 부근에 라벨 텍스트(명찰) 표시
+       if (idx === Math.floor(coords.length / 2)) {
+         ctx.save();
+         ctx.font = "bold 9px sans-serif";
+         const textWidth = ctx.measureText(f).width;
+         ctx.fillStyle = "#ffffff";
+         ctx.fillRect(coord.x - textWidth / 2 - 2, coord.y - 12, textWidth + 4, 12);
+         
+         ctx.fillStyle = color;
+         ctx.textAlign = "center";
+         ctx.fillText(f, coord.x, coord.y - 3);
+         ctx.restore();
+       }
      });
    });
 
@@ -680,10 +693,12 @@ function renderLabChart(){
    const mInfo = allMetrics.find(x => x[0] === metric) || [metric, metric, "", "#2563eb"];
    ctx.strokeStyle = mInfo[3]; ctx.lineWidth = 2; ctx.beginPath();
 
+   const coords = [];
    pts.forEach((p, i) => {
      let dIdx = visibleDates.indexOf(p.date);
      let x = L + (visibleDates.length === 1 ? iw/2 : iw * dIdx / (visibleDates.length - 1));
      let y = T + ih * (max - p[metric]) / (max - min);
+     coords.push({x, y});
      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
    });
    ctx.stroke();
@@ -694,7 +709,7 @@ function renderLabChart(){
      ctx.fillText(d.length > 10 ? d.slice(5, 16).replace("T", " ") : d.slice(5), x - 15, h - 8);
    });
 
-   pts.forEach((p) => {
+   pts.forEach((p, i) => {
      let dIdx = visibleDates.indexOf(p.date);
      let x = L + (visibleDates.length === 1 ? iw/2 : iw * dIdx / (visibleDates.length - 1));
      let y = T + ih * (max - p[metric]) / (max - min);
