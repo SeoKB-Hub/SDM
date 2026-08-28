@@ -206,22 +206,22 @@ th.group-header{background:#f1f5f9;color:var(--text-main);font-weight:700;font-s
    <label style="font-size:12px;font-weight:600">병원/기관명 (선택)<br><input id="hospitalName" style="width:100%;margin-top:4px" placeholder="예: 경기동물병원"></label>
   </div>
 
-  <div class="form-grid">
-   <label>K (mmol/L)<input id="manualK" type="number" step="0.01" placeholder="3.5~5.5"></label>
-   <label>Na (mmol/L)<input id="manualNa" type="number" step="0.1" placeholder="140~155"></label>
-   <label>Ca (mg/dL)<input id="manualCa" type="number" step="0.1" placeholder="9.0~11.5"></label>
-   <label>Cl (mmol/L)<input id="manualCl" type="number" step="0.1" placeholder="105~120"></label>
+<div class="form-grid">
+   <label>K (mmol/L)<input id="manualK" type="number" step="0.01"></label>
+   <label>Na (mmol/L)<input id="manualNa" type="number" step="0.1"></label>
+   <label>Ca (mg/dL)<input id="manualCa" type="number" step="0.1"></label>
+   <label>Cl (mmol/L)<input id="manualCl" type="number" step="0.1"></label>
    
-   <label>Creatinine<input id="manualCr" type="number" step="0.01" placeholder="0.5~1.8"></label>
-   <label>BUN (mg/dL)<input id="manualBUN" type="number" step="0.1" placeholder="7~27"></label>
-   <label>Phosphorus<input id="manualPhos" type="number" step="0.1" placeholder="2.5~6.0"></label>
+   <label>Creatinine<input id="manualCr" type="number" step="0.01"></label>
+   <label>BUN (mg/dL)<input id="manualBUN" type="number" step="0.1"></label>
+   <label>Phosphorus<input id="manualPhos" type="number" step="0.1"></label>
    
-   <label>HCO₃⁻ (mmol/L)<input id="manualHCO3" type="number" step="0.1" placeholder="20~29"></label>
-   <label>pH<input id="manualPH" type="number" step="0.01" placeholder="7.35~7.45"></label>
-   <label>BE (mmol/L)<input id="manualBE" type="number" step="0.1" placeholder="-4~2"></label>
-   <label>AnGap(+)<input id="manualAnGap" type="number" step="0.1" placeholder="10~25"></label>
+   <label>HCO₃⁻ (mmol/L)<input id="manualHCO3" type="number" step="0.1"></label>
+   <label>pH<input id="manualPH" type="number" step="0.01"></label>
+   <label>BE (mmol/L)<input id="manualBE" type="number" step="0.1"></label>
+   <label>AnGap(+)<input id="manualAnGap" type="number" step="0.1"></label>
    
-   <label>BIL (mg/dL)<input id="manualBIL" type="number" step="0.1" placeholder="0.1~0.5"></label>
+   <label>BIL (mg/dL)<input id="manualBIL" type="number" step="0.1"></label>
   </div>
 
   <p style="margin-top:12px"><label style="font-size:12px;font-weight:600">추가 메모<br><textarea id="manualNote" style="width:100%;height:60px;margin-top:4px" placeholder="검사 특이사항 등 메모"></textarea></label></p>
@@ -803,7 +803,12 @@ function renderTable(){
  }).join(""):`<tr><td colspan="15" class="empty">데이터가 비어 있습니다.</td></tr>`;
 }
 
-function dateKey(d){return d.toISOString().slice(0,10)}
+function dateKey(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 function renderCalendar(){
  const y=calDate.getFullYear(),m=calDate.getMonth(),first=new Date(y,m,1),start=first.getDay(),days=new Date(y,m+1,0).getDate();
  document.getElementById("monthTitle").textContent=`${y}년 ${m+1}월`;
