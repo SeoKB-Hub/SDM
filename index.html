@@ -594,14 +594,15 @@ function renderLabChart(){
  const L=40,R=20,T=20,B=30,iw=w-L-R,ih=h-T-B;
 
  if(metric === "ALL"){
+   const targetMetrics = allMetrics.filter(m => ["K", "BUN", "Cr", "Phos"].includes(m[0]));
    const baselines = {};
-   allMetrics.forEach(([f]) => {
+   targetMetrics.forEach(([f]) => {
      const validLabs = sortedLabs().filter(x => x[f] != null);
      if(validLabs.length > 0) baselines[f] = validLabs[0][f];
    });
 
    let allTrendVals = [];
-   allMetrics.forEach(([f]) => {
+   targetMetrics.forEach(([f]) => {
      labs.forEach(p => {
        if(p[f] != null && baselines[f]) {
          allTrendVals.push((p[f] / baselines[f]) * 100);
@@ -627,7 +628,7 @@ function renderLabChart(){
      ctx.fillText(`${(max - (max - min) * i / 4).toFixed(0)}%`, 2, y+3);
    }
 
-   allMetrics.forEach(([f, name, unit, color]) => {
+   targetMetrics.forEach(([f, name, unit, color]) => {
      const pts = labs.filter(x => x[f] != null);
      if(!pts.length || !baselines[f]) return;
 
@@ -659,7 +660,7 @@ function renderLabChart(){
      labChartPoints.push({ x, y: h/2, date: d, isAll: true, labData });
    });
 
-   document.getElementById("chartInfo").innerHTML = `<b>📊 종합 트렌드 차트:</b> 상대적 등락 변동률(%)을 비교합니다.`;
+   document.getElementById("chartInfo").innerHTML = `<b>📊 종합 트렌드 차트:</b> 주요 항목(K, BUN, Cr, Phos)의 상대적 변동률(%)을 비교합니다.`;
 
  } else {
    const pts = labs.filter(x => x[metric] != null);
@@ -870,8 +871,9 @@ setupTooltip("chartWrap", "chartTooltip", () => labChartPoints, p => {
  let html = `<b>${p.date.replace("T", " ")}</b><br>`;
  if(p.isAll) {
    html += `<div style="margin-top:4px;font-size:10px;display:grid;grid-template-columns:1fr 1fr;gap:2px">`;
+   const targetKeys = ["K", "BUN", "Cr", "Phos"];
    allMetrics.forEach(([f]) => {
-     if(p.labData[f] != null) html += `<span>${f}: <b>${p.labData[f]}</b></span>`;
+     if(targetKeys.includes(f) && p.labData[f] != null) html += `<span>${f}: <b>${p.labData[f]}</b></span>`;
    });
    html += `</div>`;
  } else {
@@ -1004,7 +1006,6 @@ function deleteLabRecord(){
  window.save(); closeModal("medicalModal"); closeModal("dayModal");
 }
 
-/* 캘린더 모달 내에서 개별 의료기록 삭제 기능 추가 */
 function deleteLabRecordByDate(dateStr){
  if(!confirm(`${dateStr.replace("T"," ")} 의료기록을 삭제할까요?`)) return;
  window.db.labs = (window.db.labs||[]).filter(x => x.date !== dateStr);
