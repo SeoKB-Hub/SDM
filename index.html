@@ -39,17 +39,18 @@ input:focus,select:focus,textarea:focus{border-color:var(--primary)}
 .range-spec{font-size:11px;color:#94a3b8;margin-top:4px;font-weight:500}
 .muted{font-size:12px;color:var(--text-muted)}.section{margin-top:24px}.section-title{font-size:16px;font-weight:700;margin-bottom:12px;letter-spacing:-0.3px}
 
-/* 막대형 그래프 스타일 */
+/* 슬림하게 크기를 줄인 막대형 그래프 및 포인터 스타일 */
 .range-bar-container {
   width: 100%;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 .range-bar-wrapper {
   display: flex;
-  height: 16px;
+  height: 10px;
   border: 1px solid #000;
   position: relative;
   background: #fff;
+  border-radius: 2px;
 }
 .range-bar-seg {
   flex: 1;
@@ -62,10 +63,11 @@ input:focus,select:focus,textarea:focus{border-color:var(--primary)}
   position: absolute;
   top: -2px;
   bottom: -2px;
-  width: 6px;
+  width: 4px;
   background: #000;
   transform: translateX(-50%);
   z-index: 2;
+  border-radius: 1px;
   transition: background-color 0.2s ease;
 }
 
@@ -235,7 +237,7 @@ th.group-header{background:#f1f5f9;color:var(--text-main);font-weight:700;font-s
    <label style="font-size:12px;font-weight:600">병원/기관명 (선택)<br><input id="hospitalName" style="width:100%;margin-top:4px" placeholder="예: 경기동물병원"></label>
   </div>
 
-<div class="form-grid">
+  <div class="form-grid">
    <label>K (mmol/L)<input id="manualK" type="number" step="0.01"></label>
    <label>Na (mmol/L)<input id="manualNa" type="number" step="0.1"></label>
    <label>Ca (mg/dL)<input id="manualCa" type="number" step="0.1"></label>
@@ -472,18 +474,11 @@ function onRangeChange(val){
  renderAllCharts();
 }
 
-/* 막대바 시각화 및 동적 색상 지정 함수 */
-function renderBarHtml(f, v) {
+/* 막대바 시각화 및 동적 색상 연동 함수 */
+function getBarColorAndPos(f, v) {
   let r = ranges[f];
   if (!r || v == null || isNaN(v)) {
-    return `
-      <div class="range-bar-container">
-        <div class="range-bar-wrapper">
-          <div class="range-bar-seg"></div>
-          <div class="range-bar-seg"></div>
-          <div class="range-bar-seg"></div>
-        </div>
-      </div>`;
+    return { posPct: 50, color: "#000000" };
   }
 
   const low = r.low;
@@ -493,39 +488,34 @@ function renderBarHtml(f, v) {
   const maxVal = high + normalSpan;
 
   let posPct = 50;
-  let markerColor = "#000000"; // 기본 검은색 (정상)
+  let color = "#000000";
 
   if (v < low) {
-    // 정상범위 좌측(하한) 미만 이탈 -> 멀어질수록 진한 파란색
     let ratio = (low - v) / normalSpan;
-    ratio = Math.min(1.0, Math.max(0.15, ratio)); // 0.15 ~ 1.0 범위로 제한
+    ratio = Math.min(1.0, Math.max(0.15, ratio));
     
-    // 연한 파랑(#60a5fa)에서 진한 파랑(#1e3a8a)으로 그라데이션
     let rVal = Math.round(96 - ratio * 66);
     let gVal = Math.round(165 - ratio * 107);
     let bVal = Math.round(250 - ratio * 112);
-    markerColor = `rgb(${rVal}, ${gVal}, ${bVal})`;
+    color = `rgb(${rVal}, ${gVal}, ${bVal})`;
 
     let posRatio = (v - minVal) / (low - minVal);
     posRatio = Math.max(0, Math.min(1, posRatio));
     posPct = (1 / 3) * posRatio * 100;
 
   } else if (v <= high) {
-    // 정상범위 내
-    markerColor = "#000000";
+    color = "#000000";
     let ratio = (v - low) / (high - low);
     posPct = (1 / 3 + (1 / 3) * ratio) * 100;
 
   } else {
-    // 정상범위 우측(상한) 초과 이탈 -> 멀어질수록 진한 붉은색
     let ratio = (v - high) / normalSpan;
-    ratio = Math.min(1.0, Math.max(0.15, ratio)); // 0.15 ~ 1.0 범위로 제한
+    ratio = Math.min(1.0, Math.max(0.15, ratio));
 
-    // 연한 빨강(#f87171)에서 진한 빨강(#7f1d1d)으로 그라데이션
     let rVal = Math.round(248 - ratio * 121);
     let gVal = Math.round(113 - ratio * 84);
     let bVal = Math.round(113 - ratio * 84);
-    markerColor = `rgb(${rVal}, ${gVal}, ${bVal})`;
+    color = `rgb(${rVal}, ${gVal}, ${bVal})`;
 
     let posRatio = (v - high) / (maxVal - high);
     posRatio = Math.max(0, Math.min(1, posRatio));
@@ -533,14 +523,17 @@ function renderBarHtml(f, v) {
   }
 
   posPct = Math.max(1, Math.min(99, posPct));
+  return { posPct, color };
+}
 
+function renderBarHtml(f, v, colorData) {
   return `
     <div class="range-bar-container">
       <div class="range-bar-wrapper">
         <div class="range-bar-seg"></div>
         <div class="range-bar-seg"></div>
         <div class="range-bar-seg"></div>
-        <div class="range-marker" style="left: ${posPct}%; background-color: ${markerColor};"></div>
+        <div class="range-marker" style="left: ${colorData.posPct}%; background-color: ${colorData.color};"></div>
       </div>
     </div>`;
 }
@@ -548,18 +541,18 @@ function renderBarHtml(f, v) {
 function renderCards(){
  document.getElementById("cards").innerHTML=allMetrics.map(([f,n,u])=>{
    let x=latest(f),v=x?.[f],s=judge(f,v);
-   let statusColor = s[1] === 'danger' ? '#dc2626' : (s[1] === 'warn' ? '#d97706' : '#166534');
+   let colorData = getBarColorAndPos(f, v);
    let displayDate = x ? x.date.replace("T", " ") : "기록 없음";
    return `<div class="card metric" onclick="selectMetric('${f}')">
      <div style="display:flex;justify-content:space-between;align-items:center;">
        <h3>${n} <span class="unit">(${u})</span></h3>
-       <span style="font-weight:bold;font-size:12px;color:${statusColor}">${s[0]}</span>
+       <span style="font-weight:bold;font-size:12px;color:${colorData.color}">${s[0]}</span>
      </div>
      <div style="display:flex;justify-content:space-between;align-items:baseline;">
-       <div class="value" style="color:${s[1] ? statusColor : 'inherit'}">${fmt(v)}</div>
+       <div class="value" style="color:${colorData.color}">${fmt(v)}</div>
        <div class="range-spec">${ranges[f]?.str || ''}</div>
      </div>
-     ${renderBarHtml(f, v)}
+     ${renderBarHtml(f, v, colorData)}
      <div class="muted" style="margin-top:6px;font-size:11px;text-align:right">${displayDate}</div>
    </div>`;
  }).join("");
