@@ -39,11 +39,31 @@ th,td{padding:8px 6px;border-right:1px solid var(--border);border-bottom:1px sol
 th{background:#f8fafc;color:var(--text-muted);font-weight:600;border-top:1px solid var(--border)}
 th.group-header{background:#f1f5f9;color:var(--text-main);font-weight:700;font-size:12px}
 th:first-child,td:first-child{border-left:1px solid var(--border)}
+
+/* 표 헤더 가로라인 스크롤 고정 (Sticky Header) */
+thead tr:nth-child(1) th {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+}
+thead tr:nth-child(2) th {
+  position: sticky;
+  top: 31px; /* 첫 번째 헤더 행 높이에 맞춰 조절 */
+  z-index: 6;
+}
+
 .col-border{border-right:2px solid var(--group-border)!important}
 .sticky-date{position:sticky!important;left:0;z-index:5;background:#fff!important;box-shadow:3px 0 5px rgba(15,23,42,.08)}
 .sticky-k{position:sticky!important;left:55px;z-index:5;background:#fff!important;box-shadow:3px 0 5px rgba(15,23,42,.08)}
 .sticky-na{position:sticky!important;left:105px;z-index:5;background:#fff!important;box-shadow:3px 0 5px rgba(15,23,42,.08)}
-thead .sticky-date, thead .sticky-k, thead .sticky-na{z-index:7;background:#f8fafc!important}
+
+/* 가로/세로 스크롤 교차 영역 교차점 z-index 상향 처리 */
+thead tr:nth-child(1) .sticky-date { z-index: 8 !important; }
+thead tr:nth-child(2) .sticky-date, 
+thead tr:nth-child(2) .sticky-k, 
+thead tr:nth-child(2) .sticky-na { z-index: 8 !important; }
+
+thead .sticky-date, thead .sticky-k, thead .sticky-na{background:#f8fafc!important}
 thead tr:first-child .sticky-date, thead tr:first-child .sticky-k, thead tr:first-child .sticky-na{background:#f1f5f9!important}
 .calendar-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .calendar{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--border);border-radius:10px;overflow:hidden;table-layout:fixed}
@@ -66,7 +86,7 @@ thead tr:first-child .sticky-date, thead tr:first-child .sticky-k, thead tr:firs
 <main class="container">
 <div class="toolbar">
 <button class="btn primary" onclick="openMedicationModal()">💊 투약/음수</button>
-<button class="btn" onclick="openEvent()">증상</button>
+<button class="btn primary" onclick="openEvent()">🚨 증상</button>
 <button class="btn primary" onclick="openMedicalUpload(null,true)">✍️ 의료기록</button>
 <button class="btn" onclick="exportData()">💾 백업</button>
 <button class="btn" onclick="document.getElementById('restoreInput').click()">📥 복원</button>
@@ -209,7 +229,7 @@ function drawEventLinesAndLabels(ctx,dates,L,iw,T,ih){
     if(es.length){
       ctx.save();
       ctx.strokeStyle="#9333ea";
-      ctx.lineWidth=1;
+      ctx.lineWidth=1.5;
       ctx.setLineDash([2,2]);
       ctx.beginPath();
       ctx.moveTo(x,T);
@@ -218,15 +238,15 @@ function drawEventLinesAndLabels(ctx,dates,L,iw,T,ih){
       ctx.restore();
 
       ctx.save();
-      ctx.font="bold 8px sans-serif";
-      ctx.fillStyle="#7e22ce";
+      ctx.font="bold 11px sans-serif";
+      ctx.fillStyle="#6b21a8";
       ctx.textAlign="center";
       let t=es.map(e=>e.title||"증상").join(", ");
       if(t.length>15)t=t.slice(0,15)+"..";
       
-      let textY = T - 6;
-      if (Math.abs(x - lastTextX) < 55) {
-        textY = (lastTextY === (T - 6)) ? (T - 16) : (T - 6);
+      let textY = T - 8;
+      if (Math.abs(x - lastTextX) < 65) {
+        textY = (lastTextY === (T - 8)) ? (T - 20) : (T - 8);
       }
       lastTextX = x;
       lastTextY = textY;
@@ -241,7 +261,7 @@ function renderLabChart(){
   const c=document.getElementById("chart"),ctx=c.getContext("2d"),dpr=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;
   c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
   labChartPoints=[];document.getElementById("chartTooltip").style.display="none";
-  const dates=getVisibleDates(),labs=sortedLabs().filter(x=>dates.includes(x.date)),L=40,R=20,T=30,B=45,iw=w-L-R,ih=h-T-B;
+  const dates=getVisibleDates(),labs=sortedLabs().filter(x=>dates.includes(x.date)),L=40,R=20,T=35,B=45,iw=w-L-R,ih=h-T-B;
   if(!dates.length){document.getElementById("chartInfo").textContent="해당 기간의 검사 데이터가 없습니다.";return}
 
   const pts=labs.filter(x=>x[metric]!=null),vals=pts.map(x=>+x[metric]);
@@ -262,25 +282,30 @@ function renderLabChart(){
     ctx.stroke()
   }
 
-  // 날짜 하단 계층형 표시 (년, 월, 일, 시간분 층층이 배치)
   dates.forEach((d,i)=>{
     let x=L+(dates.length===1?iw/2:iw*i/(dates.length-1));
-    ctx.fillStyle="#475569";
-    ctx.font="9px sans-serif";
     ctx.textAlign="center";
     
     let parts = d.split("T");
-    let datePart = parts[0]; // YYYY-MM-DD
-    let timePart = parts[1] ? parts[1].slice(0,5) : ""; // HH:MM
+    let datePart = parts[0];
+    let timePart = parts[1] ? parts[1].slice(0,5) : "";
     let dateSplit = datePart.split("-");
     let year = dateSplit[0];
     let month = dateSplit[1] + "월";
     let day = dateSplit[2] + "일";
 
+    ctx.fillStyle="#64748b";
+    ctx.font="9px sans-serif";
     ctx.fillText(year, x, h - 33);
     ctx.fillText(month, x, h - 22);
+
+    ctx.fillStyle="#0f172a";
+    ctx.font="bold 11px sans-serif";
     ctx.fillText(day, x, h - 11);
+
     if(timePart){
+      ctx.fillStyle="#64748b";
+      ctx.font="9px sans-serif";
       ctx.fillText(timePart, x, h);
     }
   });
@@ -308,15 +333,26 @@ function renderFluidChart(){
   
   dates.forEach((d,i)=>{
     let x=L+(dates.length===1?iw/2:iw*i/(dates.length-1));
-    ctx.fillStyle="#475569";ctx.font="9px sans-serif";ctx.textAlign="center";
+    ctx.textAlign="center";
     let parts = d.split("T");
     let datePart = parts[0];
     let timePart = parts[1] ? parts[1].slice(0,5) : "";
     let dateSplit = datePart.split("-");
+    
+    ctx.fillStyle="#64748b";
+    ctx.font="9px sans-serif";
     ctx.fillText(dateSplit[0], x, h - 33);
     ctx.fillText(dateSplit[1] + "월", x, h - 22);
+
+    ctx.fillStyle="#0f172a";
+    ctx.font="bold 11px sans-serif";
     ctx.fillText(dateSplit[2] + "일", x, h - 11);
-    if(timePart) ctx.fillText(timePart, x, h);
+
+    if(timePart) {
+      ctx.fillStyle="#64748b";
+      ctx.font="9px sans-serif";
+      ctx.fillText(timePart, x, h);
+    }
     
     let item = fd.find(x=>x.date===d);
     if(item) fluidChartPoints.push({x,date:d,...item})
@@ -357,7 +393,22 @@ function renderTable(){
 }
 
 function dateKey(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
-function renderCalendar(){const y=calDate.getFullYear(),m=calDate.getMonth(),first=new Date(y,m,1),start=first.getDay(),days=new Date(y,m+1,0).getDate();document.getElementById("monthTitle").textContent=`${y}년 ${m+1}월`;let cells=[];for(let i=0;i<start;i++)cells.push({n:new Date(y,m,0).getDate()-start+1+i,other:true,date:new Date(y,m-1,new Date(y,m,0).getDate()-start+1+i)});for(let d=1;d<=days;d++)cells.push({n:d,other:false,date:new Date(y,m,d)});while(cells.length<42){let d=cells.length-(start+days)+1;cells.push({n:d,other:true,date:new Date(y,m+1,d)})}let head=["일","월","화","수","목","금","토"].map(x=>`<div class="weekday">${x}</div>`).join(""),body=cells.map(c=>{let ds=dateKey(c.date),labs=(window.db.labs||[]).filter(x=>x.date.startsWith(ds)),ev=(window.db.events||[]).filter(x=>x.date.startsWith(ds)),r=[];labs.forEach(x=>{let t=x.date.includes("T")?x.date.split("T")[1]:"";r.push(`<div class="record">${t?t+" ":""}${x.hospital||"검사"}</div>`)});ev.forEach(x=>{let t=x.date.includes("T")?x.date.split("T")[1]:"";r.push(`<div class="record event">${t?t+" ":""}${x.title||"증상"}</div>`)});return`<div class="cal-day ${c.other?"other":""}" onclick="openDayEvents('${ds}')"><div class="cal-num">${c.n}</div>${r.join("")}</div>`}).join("");document.getElementById("calendar").innerHTML=head+body}
+function renderCalendar(){
+  const y=calDate.getFullYear(),m=calDate.getMonth(),first=new Date(y,m,1),start=first.getDay(),days=new Date(y,m+1,0).getDate();
+  document.getElementById("monthTitle").textContent=`${y}년 ${m+1}월`;
+  let cells=[];
+  for(let i=0;i<start;i++)cells.push({n:new Date(y,m,0).getDate()-start+1+i,other:true,date:new Date(y,m-1,new Date(y,m,0).getDate()-start+1+i)});
+  for(let d=1;d<=days;d++)cells.push({n:d,other:false,date:new Date(y,m,d)});
+  while(cells.length<42){let d=cells.length-(start+days)+1;cells.push({n:d,other:true,date:new Date(y,m+1,d)})}
+  let head=["일","월","화","수","목","금","토"].map(x=>`<div class="weekday">${x}</div>`).join(""),
+  body=cells.map(c=>{
+    let ds=dateKey(c.date),labs=(window.db.labs||[]).filter(x=>x.date.startsWith(ds)),ev=(window.db.events||[]).filter(x=>x.date.startsWith(ds)),r=[];
+    labs.forEach(x=>{r.push(`<div class="record">${x.hospital||"검사"}</div>`)});
+    ev.forEach(x=>{r.push(`<div class="record event">${x.title||"증상"}</div>`)});
+    return`<div class="cal-day ${c.other?"other":""}" onclick="openDayEvents('${ds}')"><div class="cal-num">${c.n}</div>${r.join("")}</div>`
+  }).join("");
+  document.getElementById("calendar").innerHTML=head+body
+}
 function moveMonth(n){calDate.setMonth(calDate.getMonth()+n);renderCalendar()}
 function openMedicationModal(){document.getElementById("medicationModal").style.display="flex";document.getElementById("medDate").value=nowDateTimeISO();document.getElementById("medCategory").value="투약";document.getElementById("medMemo").value="";document.getElementById("fluidAmount").value="";onMedCategoryChange()}
 function onMedCategoryChange(){const c=document.getElementById("medCategory").value;document.getElementById("medicationSubSection").style.display=c==="투약"?"block":"none";document.getElementById("fluidSubSection").style.display=c==="투약"?"none":"block"}
@@ -413,7 +464,7 @@ function saveManualMedicalRecord(){
   window.save();closeModal("medicalModal");closeModal("dayModal")
 }
 
-function exportData(){const b=new Blob([JSON.stringify(window.db,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=`mimi_medical_${dateKey(new Date())}.json`;a.click();URL.revokeObjectURL(a.href)}
+function exportData(){const b=new Blob([JSON.stringify(window.db,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.revokeObjectURL(a.href);a.download=`mimi_medical_${dateKey(new Date())}.json`;a.click()}
 function importData(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const p=JSON.parse(ev.target.result);if(p.labs&&p.events){window.db=p;window.save();alert("복원되었습니다.")}else alert("올바르지 않은 파일 형식입니다.")}catch(err){alert("오류가 발생했습니다.")}};r.readAsText(f)}
 function render(){renderAllCharts();renderTable();renderCalendar()}
 window.render=render;
@@ -422,4 +473,3 @@ window.addEventListener("resize",renderAllCharts);
 </script>
 </body>
 </html>
-```[cite: 1]
