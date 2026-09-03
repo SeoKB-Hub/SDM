@@ -40,31 +40,24 @@ th{background:#f8fafc;color:var(--text-muted);font-weight:600;border-top:1px sol
 th.group-header{background:#f1f5f9;color:var(--text-main);font-weight:700;font-size:12px}
 th:first-child,td:first-child{border-left:1px solid var(--border)}
 
-/* 표 헤더 가로라인 스크롤 고정 (Sticky Header) */
+/* 표 헤더 가로라인 스크롤 고정 (1번째 행만 상단 고정) */
 thead tr:nth-child(1) th {
   position: sticky;
   top: 0;
   z-index: 6;
 }
-thead tr:nth-child(2) th {
-  position: sticky;
-  top: 31px; /* 첫 번째 헤더 행 높이에 맞춰 조절 */
-  z-index: 6;
-}
 
 .col-border{border-right:2px solid var(--group-border)!important}
+
+/* 세로라인 스크롤 고정 (기본정보 / 일시 열만 고정) */
 .sticky-date{position:sticky!important;left:0;z-index:5;background:#fff!important;box-shadow:3px 0 5px rgba(15,23,42,.08)}
-.sticky-k{position:sticky!important;left:55px;z-index:5;background:#fff!important;box-shadow:3px 0 5px rgba(15,23,42,.08)}
-.sticky-na{position:sticky!important;left:105px;z-index:5;background:#fff!important;box-shadow:3px 0 5px rgba(15,23,42,.08)}
 
-/* 가로/세로 스크롤 교차 영역 교차점 z-index 상향 처리 */
+/* 교차점(1번째 행 기본정보) z-index 상향 처리 */
 thead tr:nth-child(1) .sticky-date { z-index: 8 !important; }
-thead tr:nth-child(2) .sticky-date, 
-thead tr:nth-child(2) .sticky-k, 
-thead tr:nth-child(2) .sticky-na { z-index: 8 !important; }
 
-thead .sticky-date, thead .sticky-k, thead .sticky-na{background:#f8fafc!important}
-thead tr:first-child .sticky-date, thead tr:first-child .sticky-k, thead tr:first-child .sticky-na{background:#f1f5f9!important}
+thead .sticky-date{background:#f8fafc!important}
+thead tr:first-child .sticky-date{background:#f1f5f9!important}
+
 .calendar-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .calendar{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--border);border-radius:10px;overflow:hidden;table-layout:fixed}
 .weekday{padding:6px;background:#f8fafc;font-size:10px;font-weight:700;text-align:center;color:var(--text-muted);border-bottom:1px solid var(--border)}
@@ -121,8 +114,8 @@ thead tr:first-child .sticky-date, thead tr:first-child .sticky-k, thead tr:firs
 </tr>
 <tr>
   <th class="col-border sticky-date" style="left:0">일시</th>
-  <th class="sticky-k" style="left:55px">K</th>
-  <th class="sticky-na" style="left:105px">Na</th>
+  <th>K</th>
+  <th>Na</th>
   <th>Ca</th>
   <th class="col-border">Cl</th>
   <th>Cr</th>
@@ -372,8 +365,8 @@ function renderTable(){
     const labs=(window.db.labs||[]).filter(x=>x.date===date),ev=(window.db.events||[]).filter(x=>x.date===date),x=labs[0]||{},et=ev.length?ev.map(e=>`${e.type||"증상"}: ${e.title||"기록"}`).join(" / "):"—";
     return `<tr>
       <td class="col-border sticky-date" style="left:0"><b>${date.replace("T"," ")}</b></td>
-      <td class="sticky-k" style="left:55px">${fmt(x.K)}</td>
-      <td class="sticky-na" style="left:105px">${fmt(x.Na)}</td>
+      <td>${fmt(x.K)}</td>
+      <td>${fmt(x.Na)}</td>
       <td>${fmt(x.Ca)}</td>
       <td class="col-border">${fmt(x.Cl)}</td>
       <td>${fmt(x.Cr)}</td>
