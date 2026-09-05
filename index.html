@@ -41,23 +41,20 @@ th.group-header{background:#f1f5f9;color:var(--text-main);font-weight:700;font-s
 th:first-child,td:first-child{border-left:1px solid var(--border)}
 
 /* --- 표 틀 고정 (Sticky) 설정 --- */
-/* 1) 상단 1번째 행 (그룹 헤더: 기본정보, 전해질 등) 위로 고정 */
 thead tr:nth-child(1) th {
   position: sticky;
   top: 0;
   z-index: 6;
 }
 
-/* 2) 상단 2번째 행 (상세 헤더: 일시, K, Na 등) 위로 고정 */
 thead tr:nth-child(2) th {
   position: sticky;
-  top: 32px; /* 1번째 행의 높이만큼 상단 여백 설정 */
+  top: 32px;
   z-index: 6;
 }
 
 .col-border{border-right:2px solid var(--group-border)!important}
 
-/* 3) 세로 스크롤 고정 (기본정보 / 일시 열 좌측 고정) */
 .sticky-date{
   position: sticky !important;
   left: 0;
@@ -66,7 +63,6 @@ thead tr:nth-child(2) th {
   box-shadow: 3px 0 5px rgba(15,23,42,.08);
 }
 
-/* 4) 상단 헤더와 좌측 일시 열이 만나는 교차점 z-index 최상위 설정 */
 thead tr:nth-child(1) .sticky-date {
   z-index: 9 !important;
   background: #f1f5f9 !important;
@@ -178,7 +174,7 @@ thead tr:nth-child(2) .sticky-date {
 <div class="form-grid">
 <label>K (mmol/L)<input id="manualK" type="number" step="0.01"></label>
 <label>Na (mmol/L)<input id="manualNa" type="number" step="0.1"></label>
-<label>Ca (mg/dL)<input id="manualCa" type="number" step="0.1"></label>
+<label>Ca (mmol/L)<input id="manualCa" type="number" step="0.01"></label>
 <label>Cl (mmol/L)<input id="manualCl" type="number" step="0.1"></label>
 <label>Creatinine<input id="manualCr" type="number" step="0.01"></label>
 <label>BUN (mg/dL)<input id="manualBUN" type="number" step="0.1"></label>
@@ -222,7 +218,46 @@ document.getElementById("asOf").value=new Date().toISOString().slice(0,10);
 function nowDateTimeISO(){const n=new Date();n.setMinutes(n.getMinutes()-n.getTimezoneOffset());return n.toISOString().slice(0,16)}
 function fmt(v){return v==null||v===""?"—":v}
 function sortedLabs(){return [...(window.db.labs||[])].sort((a,b)=>a.date.localeCompare(b.date))}
-const allMetrics=[["K","K","mmol/L","#2563eb"],["Na","Na","mmol/L","#059669"],["Ca","Ca","mg/dL","#d97706"],["Cl","Cl","mmol/L","#7c3aed"],["Cr","Creatinine","mg/dL","#dc2626"],["BUN","BUN","mg/dL","#ea580c"],["Phos","Phosphorus","mg/dL","#0284c7"],["HCO3","HCO₃⁻","mmol/L","#16a34a"],["pH","pH","","#ca8a04"],["BE","BE","mmol/L","#9333ea"],["AnGap","AnGap(+)","mmol/L","#c026d3"],["HGB","HGB","g/dL","#db2777"],["sO2","sO2","%","#0284c7"],["BIL","빌리루빈 (BIL)","mg/dL","#e11d48"]];
+
+/* 각 항목별 [코드, 명칭, 단위, 차트색상, 정상하한선, 정상상한선] 정의 - 첨부 의료자료 기준 반영 */
+const allMetrics=[
+  ["K","K","mmol/L","#2563eb",3.9,5.1],
+  ["Na","Na","mmol/L","#059669",145,151],
+  ["Ca","Ca","mmol/L","#d97706",1.16,1.4],
+  ["Cl","Cl","mmol/L","#7c3aed",110,119],
+  ["Cr","Creatinine","mg/dL","#dc2626",0.4,1.4],
+  ["BUN","BUN","mg/dL","#ea580c",9.2,29.2],
+  ["Phos","Phosphorus","mg/dL","#0284c7",1.9,5.0],
+  ["HCO3","HCO₃⁻","mmol/L","#16a34a",21.0,28.0],
+  ["pH","pH","","#ca8a04",7.31,7.46],
+  ["BE","BE","mmol/L","#9333ea",-7.0,2.9],
+  ["AnGap","AnGap(+)","mmol/L","#c026d3",10.0,20.0],
+  ["HGB","HGB","g/dL","#db2777",13.1,20.5],
+  ["sO2","sO2","%","#0284c7",95.0,99.0],
+  ["BIL","빌리루빈 (BIL)","mg/dL","#e11d48",0.1,0.5]
+];
+
+/* 특정 수치와 metric 키에 대한 스타일링 처리 함수 (상한: 붉은색, 하한: 파란색) */
+function formatCellVal(val, key) {
+  if (val == null || val === "") return "—";
+  const num = Number(val);
+  if (isNaN(num)) return val;
+
+  const mi = allMetrics.find(x => x[0] === key);
+  if (!mi) return val;
+
+  const refMin = mi[4];
+  const refMax = mi[5];
+
+  if (refMax != null && num > refMax) {
+    return `<span style="color:#dc2626;font-weight:bold">${val}</span>`;
+  }
+  if (refMin != null && num < refMin) {
+    return `<span style="color:#2563eb;font-weight:bold">${val}</span>`;
+  }
+  return val;
+}
+
 function getAllDatesSorted(){return Array.from(new Set([...(window.db.labs||[]).map(x=>x.date),...(window.db.events||[]).map(x=>x.date)])).sort()}
 function getVisibleDates(){const d=getAllDatesSorted();if(!d.length)return[];const maxStart=Math.max(0,d.length-visibleCount);chartStartOffset=Math.max(0,Math.min(chartStartOffset,maxStart));const start=maxStart-chartStartOffset;return d.slice(start,start+visibleCount)}
 function onRangeChange(v){visibleCount=Number(v);chartStartOffset=0;renderAllCharts()}
@@ -275,9 +310,20 @@ function renderLabChart(){
   const dates=getVisibleDates(),labs=sortedLabs().filter(x=>dates.includes(x.date)),L=40,R=20,T=35,B=45,iw=w-L-R,ih=h-T-B;
   if(!dates.length){document.getElementById("chartInfo").textContent="해당 기간의 검사 데이터가 없습니다.";return}
 
+  const mi=allMetrics.find(x=>x[0]===metric)||[metric,metric,"","#2563eb",0,10];
+  const refMin = mi[4], refMax = mi[5];
+
   const pts=labs.filter(x=>x[metric]!=null),vals=pts.map(x=>+x[metric]);
-  let min=vals.length?Math.min(...vals):0,max=vals.length?Math.max(...vals):10;
+  let min=vals.length?Math.min(...vals, refMin):refMin;
+  let max=vals.length?Math.max(...vals, refMax):refMax;
+  
   if(min===max){min-=1;max+=1}
+  // 차트 상하 여백 확보
+  let margin = (max - min) * 0.15 || 1;
+  min = Math.floor((min - margin) * 10) / 10;
+  max = Math.ceil((max + margin) * 10) / 10;
+
+  // 1) 배경 그리드선
   ctx.strokeStyle="#e2e8f0";ctx.lineWidth=1;
   for(let i=0;i<5;i++){
     let y=T+ih*i/4;
@@ -285,8 +331,46 @@ function renderLabChart(){
     ctx.fillStyle="#64748b";ctx.font="9px sans-serif";
     ctx.fillText((max-(max-min)*i/4).toFixed(1),2,y+3)
   }
+
+  // 2) 정상범위 (하한선 / 상한선 커트라인 영역 및 점선 표기)
+  if(refMin != null && refMax != null){
+    let yRefMax = T + ih * (max - refMax) / (max - min);
+    let yRefMin = T + ih * (max - refMin) / (max - min);
+    
+    // Y축 범위 내로 렌더링 제한
+    let drawYMax = Math.max(T, Math.min(T + ih, yRefMax));
+    let drawYMin = Math.max(T, Math.min(T + ih, yRefMin));
+
+    // 정상 범위 배경 채우기 (녹색 은은한 톤)
+    ctx.save();
+    ctx.fillStyle = "rgba(16, 185, 129, 0.08)";
+    ctx.fillRect(L, drawYMax, iw, drawYMin - drawYMax);
+    ctx.restore();
+
+    // 상한선/하한선 가이드 점선
+    ctx.save();
+    ctx.strokeStyle = "#10b981";
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([4, 4]);
+
+    // 상한선
+    if(yRefMax >= T && yRefMax <= T + ih){
+      ctx.beginPath(); ctx.moveTo(L, yRefMax); ctx.lineTo(w - R, yRefMax); ctx.stroke();
+      ctx.fillStyle = "#059669"; ctx.font = "9px sans-serif";
+      ctx.fillText(`상한(${refMax})`, w - R - 42, yRefMax - 3);
+    }
+    // 하한선
+    if(yRefMin >= T && yRefMin <= T + ih){
+      ctx.beginPath(); ctx.moveTo(L, yRefMin); ctx.lineTo(w - R, yRefMin); ctx.stroke();
+      ctx.fillStyle = "#059669"; ctx.font = "9px sans-serif";
+      ctx.fillText(`하한(${refMin})`, w - R - 42, yRefMin + 9);
+    }
+    ctx.restore();
+  }
+
   drawEventLinesAndLabels(ctx,dates,L,iw,T,ih);
-  const mi=allMetrics.find(x=>x[0]===metric)||[metric,metric,"","#2563eb"];
+
+  // 3) 데이터 꺾은선 꺾기와 포인트 표기
   if(pts.length){
     ctx.strokeStyle=mi[3];ctx.lineWidth=2;ctx.beginPath();
     pts.forEach((p,i)=>{let di=dates.indexOf(p.date),x=L+(dates.length===1?iw/2:iw*di/(dates.length-1)),y=T+ih*(max-p[metric])/(max-min);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});
@@ -324,9 +408,10 @@ function renderLabChart(){
   pts.forEach(p=>{
     let di=dates.indexOf(p.date),x=L+(dates.length===1?iw/2:iw*di/(dates.length-1)),y=T+ih*(max-p[metric])/(max-min);
     ctx.fillStyle=mi[3];ctx.beginPath();ctx.arc(x,y,3.5,0,Math.PI*2);ctx.fill();
-    labChartPoints.push({x,y,date:p.date,value:p[metric],isAll:false})
+    labChartPoints.push({x,y,date:p.date,value:p[metric],refMin,refMax,isAll:false})
   });
-  document.getElementById("chartInfo").textContent=`해당 기간 기록 수: ${pts.length}개 (${mi[2]})`
+  
+  document.getElementById("chartInfo").textContent=`해당 기간 기록 수: ${pts.length}개 (${mi[2]}) | 정상범위: ${refMin}~${refMax}${mi[2]?' '+mi[2]:''}`
 }
 
 function parseFluidValue(s){if(!s)return 0;const m=s.match(/(\d+(\.\d+)?)/);return m?parseFloat(m[1]):0}
@@ -372,7 +457,7 @@ function renderFluidChart(){
 
 function renderAllCharts(){renderTabs();renderLabChart();renderFluidChart()}
 function setupTooltip(wid,tid,getP,content){const wrap=document.getElementById(wid),tip=document.getElementById(tid);const h=e=>{const ps=getP();if(!ps.length)return;const r=wrap.getBoundingClientRect(),cx=e.touches?e.touches[0].clientX:e.clientX,x=cx-r.left;let f=null,md=30;ps.forEach(p=>{let d=Math.abs(x-p.x);if(d<md){md=d;f=p}});if(f){tip.innerHTML=content(f);tip.style.display="block";let l=f.x+10;if(l+200>r.width)l=f.x-210;tip.style.left=l+"px";tip.style.top="20px"}else tip.style.display="none"};wrap.addEventListener("mousemove",h);wrap.addEventListener("mouseleave",()=>tip.style.display="none");wrap.addEventListener("touchstart",h,{passive:true});wrap.addEventListener("touchmove",h,{passive:true})}
-setupTooltip("chartWrap","chartTooltip",()=>labChartPoints,p=>`<b>${p.date.replace("T"," ")}</b><br>${metric}: <b>${p.value}</b>`);
+setupTooltip("chartWrap","chartTooltip",()=>labChartPoints,p=>`<b>${p.date.replace("T"," ")}</b><br>${metric}: <b>${p.value}</b><br><span style="font-size:10px;color:#94a3b8">(정상: ${p.refMin}~${p.refMax})</span>`);
 setupTooltip("fluidChartWrap","fluidChartTooltip",()=>fluidChartPoints,p=>`<b>${p.date.replace("T"," ")}</b><br>💧 음수량: <b>${p.drink}</b><br>💉 수액량: <b>${p.fluid}</b><br>📊 <b>합계: ${p.total}</b>`);
 
 function setupChartDrag(){const wrap=document.getElementById("chartWrap"),canvas=document.getElementById("chart");let sx=null,drag=false;canvas.addEventListener("pointerdown",e=>{sx=e.clientX;drag=false;canvas.setPointerCapture(e.pointerId);canvas.classList.add("dragging")});canvas.addEventListener("pointermove",e=>{if(sx===null)return;const dx=e.clientX-sx;if(Math.abs(dx)>25){drag=true;const all=getAllDatesSorted(),max=Math.max(0,all.length-visibleCount);if(dx>0)chartStartOffset=Math.min(max,chartStartOffset+1);else chartStartOffset=Math.max(0,chartStartOffset-1);sx=e.clientX;renderAllCharts()}});const end=()=>{sx=null;canvas.classList.remove("dragging")};canvas.addEventListener("pointerup",end);canvas.addEventListener("pointercancel",end)}
@@ -383,20 +468,20 @@ function renderTable(){
     const labs=(window.db.labs||[]).filter(x=>x.date===date),ev=(window.db.events||[]).filter(x=>x.date===date),x=labs[0]||{},et=ev.length?ev.map(e=>`${e.type||"증상"}: ${e.title||"기록"}`).join(" / "):"—";
     return `<tr>
       <td class="col-border sticky-date"><b>${date.replace("T"," ")}</b></td>
-      <td>${fmt(x.K)}</td>
-      <td>${fmt(x.Na)}</td>
-      <td>${fmt(x.Ca)}</td>
-      <td class="col-border">${fmt(x.Cl)}</td>
-      <td>${fmt(x.Cr)}</td>
-      <td>${fmt(x.BUN)}</td>
-      <td class="col-border">${fmt(x.Phos)}</td>
-      <td>${fmt(x.HCO3)}</td>
-      <td>${fmt(x.pH)}</td>
-      <td>${fmt(x.BE)}</td>
-      <td class="col-border">${fmt(x.AnGap)}</td>
-      <td>${fmt(x.HGB)}</td>
-      <td class="col-border">${fmt(x.sO2)}</td>
-      <td class="col-border">${fmt(x.BIL)}</td>
+      <td>${formatCellVal(x.K, "K")}</td>
+      <td>${formatCellVal(x.Na, "Na")}</td>
+      <td>${formatCellVal(x.Ca, "Ca")}</td>
+      <td class="col-border">${formatCellVal(x.Cl, "Cl")}</td>
+      <td>${formatCellVal(x.Cr, "Cr")}</td>
+      <td>${formatCellVal(x.BUN, "BUN")}</td>
+      <td class="col-border">${formatCellVal(x.Phos, "Phos")}</td>
+      <td>${formatCellVal(x.HCO3, "HCO3")}</td>
+      <td>${formatCellVal(x.pH, "pH")}</td>
+      <td>${formatCellVal(x.BE, "BE")}</td>
+      <td class="col-border">${formatCellVal(x.AnGap, "AnGap")}</td>
+      <td>${formatCellVal(x.HGB, "HGB")}</td>
+      <td class="col-border">${formatCellVal(x.sO2, "sO2")}</td>
+      <td class="col-border">${formatCellVal(x.BIL, "BIL")}</td>
       <td class="col-border">${x.hospital||"—"}</td>
       <td style="text-align:left">${et}</td>
     </tr>`
