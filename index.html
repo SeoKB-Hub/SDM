@@ -500,6 +500,21 @@ function renderLabChart(){
   pts.forEach(p=>{
     let di=dates.indexOf(p.date.split("T")[0]),x=getXPos(L, iw, dates.length, di),y=T+ih*(max-p[metric])/(max-min);
     ctx.fillStyle=mi[3];ctx.beginPath();ctx.arc(x,y,3.5,0,Math.PI*2);ctx.fill();
+    
+    // 점에 검사 수치 표기 (가독성을 위한 배경 칩 및 텍스트 렌더링)
+    let valStr = String(p[metric]);
+    ctx.save();
+    ctx.font = "bold 11px sans-serif";
+    ctx.textAlign = "center";
+    let textWidth = ctx.measureText(valStr).width;
+    
+    ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+    ctx.fillRect(x - textWidth/2 - 2, y - 20, textWidth + 4, 13);
+    
+    ctx.fillStyle = mi[3];
+    ctx.fillText(valStr, x, y - 10);
+    ctx.restore();
+
     labChartPoints.push({x,y,date:p.date,value:p[metric],refMin,refMax,isAll:false})
   });
 }
