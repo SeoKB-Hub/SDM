@@ -119,16 +119,15 @@ thead tr:nth-child(2) .sticky-date { z-index: 8 !important; background: #f8fafc 
 <div class="card">
 <div class="tabs" id="metricTabs"></div>
 <div class="chart-wrap" id="chartWrap"><canvas id="chart"></canvas><div class="chart-tooltip" id="chartTooltip"></div></div>
-<div id="chartInfo" class="muted" style="margin-top:6px"></div>
 </div>
 <div class="sync-controller"><label>↔️ 한번에 볼 수 있는 기간 조절:</label><input type="range" id="viewRange" min="3" max="30" value="10" oninput="onRangeChange(this.value)"></div>
 
 <div class="section-title" style="margin-top:14px">💧 음수 및 수액량 추이 차트 (누적 막대/합계 선)</div>
-<div class="card"><div class="chart-wrap" id="fluidChartWrap" style="height:220px"><canvas id="fluidChart"></canvas><div class="chart-tooltip" id="fluidChartTooltip"></div></div><div class="muted" style="margin-top:6px">※ 일자별 음수량(청록 막대), 수액량(파란 막대) 누적 및 총량 추이선(보라 점선)을 보여줍니다.</div></div>
+<div class="card"><div class="chart-wrap" id="fluidChartWrap" style="height:220px"><canvas id="fluidChart"></canvas><div class="chart-tooltip" id="fluidChartTooltip"></div></div></div>
 
 <!-- 복약 체크 현황 차트 -->
 <div class="section-title" style="margin-top:14px">💊 일자별 투약 여부 타임라인 차트</div>
-<div class="card"><div class="chart-wrap" id="medChartWrap" style="height:220px"><canvas id="medicationChart"></canvas><div class="chart-tooltip" id="medChartTooltip"></div></div><div class="muted" style="margin-top:6px">※ 해당 날짜에 약품별 복약 체크(O) 여부를 층층이 보여줍니다.</div></div>
+<div class="card"><div class="chart-wrap" id="medChartWrap" style="height:220px"><canvas id="medicationChart"></canvas><div class="chart-tooltip" id="medChartTooltip"></div></div></div>
 </section>
 
 <!-- AI 피드백 컴포넌트 추가 -->
@@ -321,7 +320,7 @@ onValue(ref(firebaseDb,'mimi_medical_data'),snapshot=>{
 <script>
 let metric="K",calDate=new Date(),visibleCount=10,chartStartOffset=0;
 let labChartPoints=[],fluidChartPoints=[],medChartPoints=[];
-const defaultMedList = ["간약", "젠토닐", "에피클", "오메가3", "레날어드밴스드", "아미나바스타", "아조딜", "식욕촉진제(크림)", "포러스원", "레나메진", "로포타", "인트라젠"];
+const defaultMedList = ["간약", "젠토닐", "에피클", "오메가3", "레날어드밴스드", "아미나바스타", "아조딜", "식욕촉진제(크림)", "카리메트", "로포타", "인트라젠"];
 
 document.getElementById("asOf").value=new Date().toISOString().slice(0,10);
 function nowDateISO(){const n=new Date();n.setMinutes(n.getMinutes()-n.getTimezoneOffset());return n.toISOString().slice(0,10)}
@@ -366,8 +365,15 @@ function formatCellVal(val, key) {
   return val;
 }
 
-function getAllDatesSorted(){return Array.from(new Set([...(window.db.labs||[]).map(x=>x.date),...(window.db.events||[]).map(x=>x.date)])).sort()}
+function getAllDatesSorted(){
+  const dates = [...(window.db.labs||[]).map(x=>x.date.split("T")[0]), ...(window.db.events||[]).map(x=>x.date.split("T")[0])];
+  return Array.from(new Set(dates)).sort();
+}
 function getVisibleDates(){const d=getAllDatesSorted();if(!d.length)return[];const maxStart=Math.max(0,d.length-visibleCount);chartStartOffset=Math.max(0,Math.min(chartStartOffset,maxStart));const start=maxStart-chartStartOffset;return d.slice(start,start+visibleCount)}
+function getXPos(L, iw, len, idx) {
+  if (len <= 1) return L + iw / 2;
+  return L + (iw / (len + 1)) * (idx + 1);
+}
 function onRangeChange(v){visibleCount=Number(v);chartStartOffset=0;renderAllCharts()}
 function selectMetric(m){metric=m;renderAllCharts()}
 function renderTabs(){document.getElementById("metricTabs").innerHTML=allMetrics.map(x=>`<button class="tab ${metric===x[0]?"active":""}" onclick="selectMetric('${x[0]}')">${x[0]==="AnGap"?"AnGap(+)":x[0]}</button>`).join("")}
@@ -378,8 +384,8 @@ function drawEventLinesAndLabels(ctx,dates,L,iw,T,ih){
   let lastTextY = T - 12;
 
   dates.forEach((d,i)=>{
-    let x=L+(dates.length===1?iw/2:iw*i/(dates.length-1));
-    let es=events.filter(e=>(e.date===d||e.date.startsWith(d)) && e.type!=="투약" && e.type!=="음수" && e.type!=="수액");
+    let x=getXPos(L, iw, dates.length, i);
+    let es=events.filter(e=>e.date.startsWith(d) && e.type!=="투약" && e.type!=="음수" && e.type!=="수액");
     if(es.length){
       ctx.save();
       ctx.strokeStyle="#9333ea";
@@ -415,8 +421,8 @@ function renderLabChart(){
   const c=document.getElementById("chart"),ctx=c.getContext("2d"),dpr=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;
   c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
   labChartPoints=[];document.getElementById("chartTooltip").style.display="none";
-  const dates=getVisibleDates(),labs=sortedLabs().filter(x=>dates.includes(x.date)),L=100,R=20,T=35,B=45,iw=w-L-R,ih=h-T-B;
-  if(!dates.length){document.getElementById("chartInfo").textContent="해당 기간의 검사 데이터가 없습니다.";return}
+  const dates=getVisibleDates(),labs=sortedLabs().filter(x=>dates.includes(x.date.split("T")[0])),L=100,R=20,T=35,B=45,iw=w-L-R,ih=h-T-B;
+  if(!dates.length)return;
 
   const mi=allMetrics.find(x=>x[0]===metric)||[metric,metric,"","#2563eb",0,10];
   const refMin = mi[4], refMax = mi[5];
@@ -472,18 +478,14 @@ function renderLabChart(){
 
   if(pts.length){
     ctx.strokeStyle=mi[3];ctx.lineWidth=2;ctx.beginPath();
-    pts.forEach((p,i)=>{let di=dates.indexOf(p.date),x=L+(dates.length===1?iw/2:iw*di/(dates.length-1)),y=T+ih*(max-p[metric])/(max-min);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});
+    pts.forEach((p,i)=>{let di=dates.indexOf(p.date.split("T")[0]),x=getXPos(L, iw, dates.length, di),y=T+ih*(max-p[metric])/(max-min);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});
     ctx.stroke()
   }
 
   dates.forEach((d,i)=>{
-    let x=L+(dates.length===1?iw/2:iw*i/(dates.length-1));
+    let x=getXPos(L, iw, dates.length, i);
     ctx.textAlign="center";
-    
-    let parts = d.split("T");
-    let datePart = parts[0];
-    let timePart = parts[1] ? parts[1].slice(0,5) : "12:00";
-    let dateSplit = datePart.split("-");
+    let dateSplit = d.split("-");
 
     ctx.fillStyle="#64748b";
     ctx.font="9px sans-serif";
@@ -493,19 +495,13 @@ function renderLabChart(){
     ctx.fillStyle="#0f172a";
     ctx.font="bold 11px sans-serif";
     ctx.fillText(dateSplit[2] + "일", x, h - 11);
-
-    ctx.fillStyle="#64748b";
-    ctx.font="9px sans-serif";
-    ctx.fillText(timePart, x, h);
   });
 
   pts.forEach(p=>{
-    let di=dates.indexOf(p.date),x=L+(dates.length===1?iw/2:iw*di/(dates.length-1)),y=T+ih*(max-p[metric])/(max-min);
+    let di=dates.indexOf(p.date.split("T")[0]),x=getXPos(L, iw, dates.length, di),y=T+ih*(max-p[metric])/(max-min);
     ctx.fillStyle=mi[3];ctx.beginPath();ctx.arc(x,y,3.5,0,Math.PI*2);ctx.fill();
     labChartPoints.push({x,y,date:p.date,value:p[metric],refMin,refMax,isAll:false})
   });
-  
-  document.getElementById("chartInfo").textContent=`해당 기간 기록 수: ${pts.length}개 (${mi[2]}) | 정상범위: ${refMin}~${refMax}${mi[2]?' '+mi[2]:''}`
 }
 
 function parseFluidValue(s){if(!s)return 0;const m=String(s).match(/(\d+(\.\d+)?)/);return m?parseFloat(m[1]):0}
@@ -515,9 +511,9 @@ function renderFluidChart(){
   c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
   fluidChartPoints=[];const dates=getVisibleDates();if(!dates.length)return;
   
-  const L=100,R=20,T=20,B=45,iw=w-L-R,ih=h-T-B;
+  const L=100,R=20,T=25,B=45,iw=w-L-R,ih=h-T-B;
   const fd=dates.map(d=>{
-    let ev=(window.db.events||[]).filter(e=>e.date===d||e.date.startsWith(d)),drink=0,fluid=0;
+    let ev=(window.db.events||[]).filter(e=>e.date.startsWith(d)),drink=0,fluid=0;
     ev.forEach(e=>{
       if(e.type==="음수") drink += parseFluidValue(e.title+" "+e.memo);
       if(e.type==="수액") fluid += parseFluidValue(e.title+" "+e.memo);
@@ -538,42 +534,66 @@ function renderFluidChart(){
   const barWidth = Math.min(24, Math.max(8, iw / dates.length * 0.4));
 
   fd.forEach((d, i)=>{
-    let x = L + (dates.length===1 ? iw/2 : iw*i/(dates.length-1));
+    let x = getXPos(L, iw, dates.length, i);
     let baseY = T + ih;
 
+    // 음수량 막대
     if(d.drink > 0){
       let hDrink = (d.drink / maxVal) * ih;
       ctx.fillStyle = "#06b6d4";
       ctx.fillRect(x - barWidth/2, baseY - hDrink, barWidth, hDrink);
+      
+      // 막대 내 음수량 숫자 표시
+      if(hDrink >= 10){
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 9px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(Math.round(d.drink), x, baseY - hDrink / 2 + 3);
+      }
       baseY -= hDrink;
     }
 
+    // 수액량 막대
     if(d.fluid > 0){
       let hFluid = (d.fluid / maxVal) * ih;
       ctx.fillStyle = "#2563eb";
       ctx.fillRect(x - barWidth/2, baseY - hFluid, barWidth, hFluid);
+
+      // 막대 내 수액량 숫자 표시
+      if(hFluid >= 10){
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 9px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(Math.round(d.fluid), x, baseY - hFluid / 2 + 3);
+      }
+    }
+
+    // 제일 상단 합계 수치 표시
+    if(d.total > 0){
+      let totalY = T + ih * (maxVal - d.total) / maxVal;
+      ctx.fillStyle = "#4c1d95";
+      ctx.font = "bold 10px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(Math.round(d.total), x, totalY - 6);
     }
   });
 
   ctx.strokeStyle="#8b5cf6";ctx.lineWidth=2;ctx.setLineDash([3,3]);ctx.beginPath();
   fd.forEach((d,i)=>{
-    let x=L+(dates.length===1?iw/2:iw*i/(dates.length-1)),y=T+ih*(maxVal-d.total)/maxVal;
+    let x=getXPos(L, iw, dates.length, i),y=T+ih*(maxVal-d.total)/maxVal;
     i?ctx.lineTo(x,y):ctx.moveTo(x,y);
   });
   ctx.stroke();ctx.setLineDash([]);
 
   fd.forEach((d,i)=>{
-    let x=L+(dates.length===1?iw/2:iw*i/(dates.length-1)),y=T+ih*(maxVal-d.total)/maxVal;
+    let x=getXPos(L, iw, dates.length, i),y=T+ih*(maxVal-d.total)/maxVal;
     ctx.fillStyle="#8b5cf6";ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();
   });
   
   dates.forEach((d,i)=>{
-    let x=L+(dates.length===1?iw/2:iw*i/(dates.length-1));
+    let x=getXPos(L, iw, dates.length, i);
     ctx.textAlign="center";
-    let parts = d.split("T");
-    let datePart = parts[0];
-    let timePart = parts[1] ? parts[1].slice(0,5) : "12:00";
-    let dateSplit = datePart.split("-");
+    let dateSplit = d.split("-");
     
     ctx.fillStyle="#64748b";ctx.font="9px sans-serif";
     ctx.fillText(dateSplit[0], x, h - 33);
@@ -581,9 +601,6 @@ function renderFluidChart(){
 
     ctx.fillStyle="#0f172a";ctx.font="bold 11px sans-serif";
     ctx.fillText(dateSplit[2] + "일", x, h - 11);
-
-    ctx.fillStyle="#64748b";ctx.font="9px sans-serif";
-    ctx.fillText(timePart, x, h);
     
     let item = fd.find(x=>x.date===d);
     if(item) fluidChartPoints.push({x,date:d,...item});
@@ -596,7 +613,13 @@ function renderMedicationChart(){
   medChartPoints=[];
   const dates=getVisibleDates();if(!dates.length)return;
 
-  const meds = defaultMedList;
+  // 전체 기록 중 실제 기록이 존재하는 약품만 정리하여 추출
+  const allEvents = window.db.events || [];
+  const activeMeds = defaultMedList.filter(m => {
+    return allEvents.some(e => e.type === "투약" && e.title && e.title.includes(m));
+  });
+
+  const meds = activeMeds.length > 0 ? activeMeds : defaultMedList;
   const L=100,R=20,T=20,B=35,iw=w-L-R,ih=h-T-B;
   const rowHeight = ih / meds.length;
 
@@ -615,16 +638,12 @@ function renderMedicationChart(){
   });
 
   dates.forEach((d, di)=>{
-    let x = L + (dates.length === 1 ? iw/2 : iw * di / (dates.length - 1));
-    
-    let parts = d.split("T");
-    let datePartOnly = parts[0];
-    let timePartOnly = parts[1] ? parts[1].slice(0,5) : "";
-    let dateSplit = datePartOnly.split("-");
+    let x = getXPos(L, iw, dates.length, di);
+    let dateSplit = d.split("-");
     ctx.fillStyle="#64748b";
     ctx.font="9px sans-serif";
     ctx.textAlign="center";
-    ctx.fillText(`${dateSplit[1]}/${dateSplit[2]}${timePartOnly ? ' ' + timePartOnly : ''}`, x, h - 10);
+    ctx.fillText(`${dateSplit[1]}/${dateSplit[2]}`, x, h - 10);
 
     ctx.strokeStyle="#f8fafc";
     ctx.beginPath();
@@ -632,7 +651,7 @@ function renderMedicationChart(){
     ctx.lineTo(x, h - B);
     ctx.stroke();
 
-    let evs = (window.db.events||[]).filter(e => e.date === d && e.type === "투약");
+    let evs = (window.db.events||[]).filter(e => e.date.startsWith(d) && e.type === "투약");
     
     meds.forEach((m, idx)=>{
       let y = T + rowHeight * idx + rowHeight/2;
@@ -712,14 +731,20 @@ function renderAllCharts(){renderTabs();renderLabChart();renderFluidChart();rend
 function setupTooltip(wid,tid,getP,content){const wrap=document.getElementById(wid),tip=document.getElementById(tid);if(!wrap||!tip)return;const h=e=>{const ps=getP();if(!ps.length)return;const r=wrap.getBoundingClientRect(),cx=e.touches?e.touches[0].clientX:e.clientX,x=cx-r.left;let f=null,md=30;ps.forEach(p=>{let d=Math.abs(x-p.x);if(d<md){md=d;f=p}});if(f){tip.innerHTML=content(f);tip.style.display="block";let l=f.x+10;if(l+200>r.width)l=f.x-210;tip.style.left=l+"px";tip.style.top="20px"}else tip.style.display="none"};wrap.addEventListener("mousemove",h);wrap.addEventListener("mouseleave",()=>tip.style.display="none");wrap.addEventListener("touchstart",h,{passive:true});wrap.addEventListener("touchmove",h,{passive:true})}
 
 setupTooltip("chartWrap","chartTooltip",()=>labChartPoints,p=>`<b>${p.date.replace("T"," ")}</b><br>${metric}: <b>${p.value}</b><br><span style="font-size:10px;color:#94a3b8">(정상: ${p.refMin}~${p.refMax})</span>`);
-setupTooltip("fluidChartWrap","fluidChartTooltip",()=>fluidChartPoints,p=>`<b>${p.date.replace("T"," ")}</b><br>💧 음수량: <b>${p.drink} ml</b><br>💉 수액량: <b>${p.fluid} ml</b><br>📊 <b>합계: ${p.total} ml</b>`);
-setupTooltip("medChartWrap","medChartTooltip",()=>medChartPoints,p=>`<b>${p.date.replace("T"," ")}</b><br>💊 약품: <b>${p.medName}</b><br>상세: ${p.details}`);
+setupTooltip("fluidChartWrap","fluidChartTooltip",()=>fluidChartPoints,p=>`<b>${p.date}</b><br>💧 음수량: <b>${p.drink} ml</b><br>💉 수액량: <b>${p.fluid} ml</b><br>📊 <b>합계: ${p.total} ml</b>`);
+setupTooltip("medChartWrap","medChartTooltip",()=>medChartPoints,p=>`<b>${p.date}</b><br>💊 약품: <b>${p.medName}</b><br>상세: ${p.details}`);
 
 function setupChartDrag(){const wrap=document.getElementById("chartWrap"),canvas=document.getElementById("chart");let sx=null,drag=false;canvas.addEventListener("pointerdown",e=>{sx=e.clientX;drag=false;canvas.setPointerCapture(e.pointerId);canvas.classList.add("dragging")});canvas.addEventListener("pointermove",e=>{if(sx===null)return;const dx=e.clientX-sx;if(Math.abs(dx)>25){drag=true;const all=getAllDatesSorted(),max=Math.max(0,all.length-visibleCount);if(dx>0)chartStartOffset=Math.min(max,chartStartOffset+1);else chartStartOffset=Math.max(0,chartStartOffset-1);sx=e.clientX;renderAllCharts()}});const end=()=>{sx=null;canvas.classList.remove("dragging")};canvas.addEventListener("pointerup",end);canvas.addEventListener("pointercancel",end)}
 
 function renderTable(){
   const ds=[...new Set([...(window.db.labs||[]).map(x=>x.date),...(window.db.events||[]).map(x=>x.date)])].sort().reverse();
-  document.getElementById("dataTable").innerHTML=ds.length?ds.map(date=>{
+  const filteredDates = ds.filter(date => {
+    const labs = (window.db.labs||[]).filter(x => x.date === date);
+    const ev = (window.db.events||[]).filter(x => x.date === date);
+    return labs.length > 0 || ev.length > 0;
+  });
+
+  document.getElementById("dataTable").innerHTML=filteredDates.length?filteredDates.map(date=>{
     const labs=(window.db.labs||[]).filter(x=>x.date===date);
     const ev=(window.db.events||[]).filter(x=>x.date===date && x.type!=="투약" && x.type!=="음수" && x.type!=="수액");
     const x=labs[0]||{},et=ev.length?ev.map(e=>`${e.type||"증상"}: ${e.title||"기록"}`).join(" / "):"—";
