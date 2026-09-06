@@ -41,36 +41,12 @@ th.group-header{background:#f1f5f9;color:var(--text-main);font-weight:700;font-s
 th:first-child,td:first-child{border-left:1px solid var(--border)}
 
 /* --- 표 틀 고정 (Sticky) 설정 --- */
-thead tr:nth-child(1) th {
-  position: sticky;
-  top: 0;
-  z-index: 6;
-}
-
-thead tr:nth-child(2) th {
-  position: sticky;
-  top: 32px;
-  z-index: 6;
-}
-
+thead tr:nth-child(1) th { position: sticky; top: 0; z-index: 6; }
+thead tr:nth-child(2) th { position: sticky; top: 32px; z-index: 6; }
 .col-border{border-right:2px solid var(--group-border)!important}
-
-.sticky-date{
-  position: sticky !important;
-  left: 0;
-  z-index: 5;
-  background: #fff !important;
-  box-shadow: 3px 0 5px rgba(15,23,42,.08);
-}
-
-thead tr:nth-child(1) .sticky-date {
-  z-index: 9 !important;
-  background: #f1f5f9 !important;
-}
-thead tr:nth-child(2) .sticky-date {
-  z-index: 8 !important;
-  background: #f8fafc !important;
-}
+.sticky-date{ position: sticky !important; left: 0; z-index: 5; background: #fff !important; box-shadow: 3px 0 5px rgba(15,23,42,.08); }
+thead tr:nth-child(1) .sticky-date { z-index: 9 !important; background: #f1f5f9 !important; }
+thead tr:nth-child(2) .sticky-date { z-index: 8 !important; background: #f8fafc !important; }
 
 .calendar-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .calendar{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--border);border-radius:10px;overflow:hidden;table-layout:fixed}
@@ -86,9 +62,13 @@ thead tr:nth-child(2) .sticky-date {
 #syncBadge{font-size:10px;padding:3px 6px;border-radius:10px;background:#e2e8f0;color:#475569;font-weight:600}#syncBadge.online{background:#dcfce7;color:#166534}
 
 /* 약품 체크박스 그리드 스타일 */
-.med-checkbox-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;max-height:180px;overflow-y:auto;border:1px solid var(--border);padding:8px;border-radius:6px;background:#fafafa}
+.med-checkbox-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;max-height:160px;overflow-y:auto;border:1px solid var(--border);padding:8px;border-radius:6px;background:#fafafa}
 .med-checkbox-item{display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer}
 .med-checkbox-item input{cursor:pointer}
+
+/* 통합 입력 폼 섹션 스타일 */
+.batch-input-section { border: 1px solid var(--border); padding: 10px; border-radius: 8px; margin-bottom: 10px; background: #f8fafc; }
+.batch-input-title { font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
 
 /* AI 피드백 카드 스타일 */
 .ai-feedback-card {
@@ -114,9 +94,7 @@ thead tr:nth-child(2) .sticky-date {
   color: #334155;
   line-height: 1.6;
 }
-.ai-feedback-list li {
-  margin-bottom: 4px;
-}
+.ai-feedback-list li { margin-bottom: 4px; }
 
 @media(max-width:768px){.card{padding:8px 9px}.form-grid{grid-template-columns:repeat(2,1fr)}.med-checkbox-grid{grid-template-columns:repeat(1,1fr)}}
 </style>
@@ -126,7 +104,7 @@ thead tr:nth-child(2) .sticky-date {
 
 <main class="container">
 <div class="toolbar">
-<button class="btn primary" onclick="openMedicationModal()">💊 투약/음수</button>
+<button class="btn primary" onclick="openMedicationModal()">💊 일괄기록(투약/수액/음수)</button>
 <button class="btn primary" onclick="openEvent()">🚨 증상</button>
 <button class="btn primary" onclick="openMedicalUpload(null,true)">✍️ 의료기록</button>
 <button class="btn" onclick="exportData()">💾 백업</button>
@@ -144,8 +122,8 @@ thead tr:nth-child(2) .sticky-date {
 </div>
 <div class="sync-controller"><label>↔️ 한번에 볼 수 있는 기간 조절:</label><input type="range" id="viewRange" min="3" max="30" value="10" oninput="onRangeChange(this.value)"></div>
 
-<div class="section-title" style="margin-top:14px">💧 음수 및 수액량 추이 차트</div>
-<div class="card"><div class="chart-wrap" id="fluidChartWrap" style="height:200px"><canvas id="fluidChart"></canvas><div class="chart-tooltip" id="fluidChartTooltip"></div></div><div class="muted" style="margin-top:6px">※ 일자별 음수량, 수액량 및 합산 추이를 보여줍니다.</div></div>
+<div class="section-title" style="margin-top:14px">💧 음수 및 수액량 추이 차트 (누적 막대/합계 선)</div>
+<div class="card"><div class="chart-wrap" id="fluidChartWrap" style="height:220px"><canvas id="fluidChart"></canvas><div class="chart-tooltip" id="fluidChartTooltip"></div></div><div class="muted" style="margin-top:6px">※ 일자별 음수량(청록 막대), 수액량(파란 막대) 누적 및 총량 추이선(보라 점선)을 보여줍니다.</div></div>
 
 <!-- 복약 체크 현황 차트 -->
 <div class="section-title" style="margin-top:14px">💊 일자별 투약 여부 타임라인 차트</div>
@@ -199,22 +177,32 @@ thead tr:nth-child(2) .sticky-date {
 <section class="section"><div class="section-title">🗓️ 의료기록 캘린더</div><div class="card"><div class="calendar-head"><button class="btn" onclick="moveMonth(-1)">‹</button><strong id="monthTitle" style="font-size:14px"></strong><button class="btn" onclick="moveMonth(1)">›</button></div><div class="calendar" id="calendar"></div></div></section>
 </main>
 
+<!-- 투약 / 수액 / 음수 일괄 입력 모달 -->
 <div class="modal" id="medicationModal" onclick="if(event.target===this)closeModal('medicationModal')"><div class="modal-box">
-<h3 style="margin-top:0;font-size:16px">💊 투약/음수</h3><p class="muted">일자를 선택하고 빠른 체크를 진행해주세요.</p>
+<h3 style="margin-top:0;font-size:16px">💊 일괄 데이터 입력 (투약 / 수액 / 음수)</h3>
+<p class="muted">한 번에 일괄 기록이 가능합니다. 해당 사항이 있는 항목만 입력하세요.</p>
 <div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600">기록 일자<br><input id="medDate" type="date" style="width:100%;margin-top:2px"></label></div>
-<div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600">종류 선택<br><select id="medCategory" style="width:100%;margin-top:2px" onchange="onMedCategoryChange()"><option value="투약">투약 (빠른 체크)</option><option value="음수">음수</option><option value="수액">수액</option></select></label></div>
 
-<div id="medicationSubSection">
-  <div style="margin-bottom:10px"><label style="font-size:11px;font-weight:600">복용한 약품 선택 (복수 선택 가능)</label>
-    <div class="med-checkbox-grid" id="medCheckboxGrid">
-      <!-- 동적 약품 체크박스 영역 -->
-    </div>
-  </div>
+<!-- 1. 투약 입력 -->
+<div class="batch-input-section">
+  <div class="batch-input-title">💊 1. 복용 약품 선택 (빠른 체크)</div>
+  <div class="med-checkbox-grid" id="medCheckboxGrid"></div>
 </div>
 
-<div id="fluidSubSection" style="display:none"><div style="margin-bottom:10px"><label style="font-size:11px;font-weight:600">용량 (ml)<br><input id="fluidAmount" type="number" step="1" style="width:100%;margin-top:2px" placeholder="예: 100"></label></div></div>
-<div style="margin-bottom:10px"><label style="font-size:11px;font-weight:600">추가 메모 (선택)<br><textarea id="medMemo" style="width:100%;height:50px;margin-top:2px" placeholder="특이사항 입력"></textarea></label></div>
-<div style="display:flex;justify-content:flex-end;gap:6px;margin-top:14px"><button class="btn" onclick="closeModal('medicationModal')">취소</button><button class="btn primary" onclick="saveMedicationRecord()">저장</button></div>
+<!-- 2. 수액 입력 -->
+<div class="batch-input-section">
+  <div class="batch-input-title">💉 2. 수액 투여량 (ml)</div>
+  <input id="batchFluidAmount" type="number" step="1" style="width:100%" placeholder="예: 100">
+</div>
+
+<!-- 3. 음수 입력 -->
+<div class="batch-input-section">
+  <div class="batch-input-title">💧 3. 음수량 (ml)</div>
+  <input id="batchDrinkAmount" type="number" step="1" style="width:100%" placeholder="예: 80">
+</div>
+
+<div style="margin-bottom:10px"><label style="font-size:11px;font-weight:600">추가 메모 (선택)<br><textarea id="medMemo" style="width:100%;height:50px;margin-top:2px" placeholder="통합 특이사항 입력"></textarea></label></div>
+<div style="display:flex;justify-content:flex-end;gap:6px;margin-top:14px"><button class="btn" onclick="closeModal('medicationModal')">취소</button><button class="btn primary" onclick="saveMedicationRecord()">일괄 저장</button></div>
 </div></div>
 
 <div class="modal" id="medicalModal" onclick="if(event.target===this)closeModal('medicalModal')"><div class="modal-box">
@@ -325,7 +313,7 @@ function drawEventLinesAndLabels(ctx,dates,L,iw,T,ih){
 
   dates.forEach((d,i)=>{
     let x=L+(dates.length===1?iw/2:iw*i/(dates.length-1));
-    let es=events.filter(e=>e.date===d||e.date.startsWith(d));
+    let es=events.filter(e=>(e.date===d||e.date.startsWith(d)) && e.type!=="투약" && e.type!=="음수" && e.type!=="수액");
     if(es.length){
       ctx.save();
       ctx.strokeStyle="#9333ea";
@@ -456,19 +444,71 @@ function renderLabChart(){
   document.getElementById("chartInfo").textContent=`해당 기간 기록 수: ${pts.length}개 (${mi[2]}) | 정상범위: ${refMin}~${refMax}${mi[2]?' '+mi[2]:''}`
 }
 
-function parseFluidValue(s){if(!s)return 0;const m=s.match(/(\d+(\.\d+)?)/);return m?parseFloat(m[1]):0}
+function parseFluidValue(s){if(!s)return 0;const m=String(s).match(/(\d+(\.\d+)?)/);return m?parseFloat(m[1]):0}
+
+/* [개선된 음수/수액량 차트: 막대+선 혼합 누적 형태] */
 function renderFluidChart(){
   const c=document.getElementById("fluidChart"),ctx=c.getContext("2d"),dpr=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;
   c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
   fluidChartPoints=[];const dates=getVisibleDates();if(!dates.length)return;
-  const L=100,R=20,T=20,B=45,iw=w-L-R,ih=h-T-B,fd=dates.map(d=>{let ev=(window.db.events||[]).filter(e=>e.date===d||e.date.startsWith(d)),drink=0,fluid=0;ev.forEach(e=>{if(e.type==="음수")drink+=parseFluidValue(e.title+" "+e.memo);if(e.type==="수액")fluid+=parseFluidValue(e.title+" "+e.memo)});return{date:d,drink,fluid,total:drink+fluid}});
-  let maxVal=Math.ceil(Math.max(...fd.map(d=>d.total),5)/5)*5;
-  ctx.strokeStyle="#e2e8f0";ctx.lineWidth=1;
-  for(let i=0;i<4;i++){let y=T+ih*i/3;ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(w-R,y);ctx.stroke();ctx.fillStyle="#64748b";ctx.font="9px sans-serif";ctx.fillText((maxVal-maxVal*i/3).toFixed(0),2,y+3)}
-  const lines=[["total","#8b5cf6",[4,4]],["drink","#06b6d4",[]],["fluid","#2563eb",[]]];
-  lines.forEach(([k,col,dash])=>{ctx.strokeStyle=col;ctx.lineWidth=2;ctx.setLineDash(dash);ctx.beginPath();fd.forEach((d,i)=>{let x=L+(dates.length===1?iw/2:iw*i/(dates.length-1)),y=T+ih*(maxVal-d[k])/maxVal;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke()});
-  ctx.setLineDash([]);
   
+  const L=100,R=20,T=20,B=45,iw=w-L-R,ih=h-T-B;
+  const fd=dates.map(d=>{
+    let ev=(window.db.events||[]).filter(e=>e.date===d||e.date.startsWith(d)),drink=0,fluid=0;
+    ev.forEach(e=>{
+      if(e.type==="음수") drink += parseFluidValue(e.title+" "+e.memo);
+      if(e.type==="수액") fluid += parseFluidValue(e.title+" "+e.memo);
+    });
+    return{date:d,drink,fluid,total:drink+fluid};
+  });
+
+  let maxVal=Math.ceil(Math.max(...fd.map(d=>d.total),10)/10)*10;
+  
+  ctx.strokeStyle="#e2e8f0";ctx.lineWidth=1;
+  for(let i=0;i<4;i++){
+    let y=T+ih*i/3;
+    ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(w-R,y);ctx.stroke();
+    ctx.fillStyle="#64748b";ctx.font="9px sans-serif";
+    ctx.fillText((maxVal-maxVal*i/3).toFixed(0)+' ml',2,y+3);
+  }
+
+  const barWidth = Math.min(24, Math.max(8, iw / dates.length * 0.4));
+
+  // 1. 당일 누적 막대 그리기 (음수: 청록색, 수액: 파란색 쌓기)
+  fd.forEach((d, i)=>{
+    let x = L + (dates.length===1 ? iw/2 : iw*i/(dates.length-1));
+    let baseY = T + ih;
+
+    // 음수 막대
+    if(d.drink > 0){
+      let hDrink = (d.drink / maxVal) * ih;
+      ctx.fillStyle = "#06b6d4";
+      ctx.fillRect(x - barWidth/2, baseY - hDrink, barWidth, hDrink);
+      baseY -= hDrink;
+    }
+
+    // 수액 막대 (음수 위에 적층)
+    if(d.fluid > 0){
+      let hFluid = (d.fluid / maxVal) * ih;
+      ctx.fillStyle = "#2563eb";
+      ctx.fillRect(x - barWidth/2, baseY - hFluid, barWidth, hFluid);
+    }
+  });
+
+  // 2. 총량 추이 꺾은선 그리기 (보라색 점선 + 원형 포인트)
+  ctx.strokeStyle="#8b5cf6";ctx.lineWidth=2;ctx.setLineDash([3,3]);ctx.beginPath();
+  fd.forEach((d,i)=>{
+    let x=L+(dates.length===1?iw/2:iw*i/(dates.length-1)),y=T+ih*(maxVal-d.total)/maxVal;
+    i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+  });
+  ctx.stroke();ctx.setLineDash([]);
+
+  fd.forEach((d,i)=>{
+    let x=L+(dates.length===1?iw/2:iw*i/(dates.length-1)),y=T+ih*(maxVal-d.total)/maxVal;
+    ctx.fillStyle="#8b5cf6";ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();
+  });
+  
+  // X축 날짜 렌더링
   dates.forEach((d,i)=>{
     let x=L+(dates.length===1?iw/2:iw*i/(dates.length-1));
     ctx.textAlign="center";
@@ -477,27 +517,23 @@ function renderFluidChart(){
     let timePart = parts[1] ? parts[1].slice(0,5) : "";
     let dateSplit = datePart.split("-");
     
-    ctx.fillStyle="#64748b";
-    ctx.font="9px sans-serif";
+    ctx.fillStyle="#64748b";ctx.font="9px sans-serif";
     ctx.fillText(dateSplit[0], x, h - 33);
     ctx.fillText(dateSplit[1] + "월", x, h - 22);
 
-    ctx.fillStyle="#0f172a";
-    ctx.font="bold 11px sans-serif";
+    ctx.fillStyle="#0f172a";ctx.font="bold 11px sans-serif";
     ctx.fillText(dateSplit[2] + "일", x, h - 11);
 
     if(timePart) {
-      ctx.fillStyle="#64748b";
-      ctx.font="9px sans-serif";
+      ctx.fillStyle="#64748b";ctx.font="9px sans-serif";
       ctx.fillText(timePart, x, h);
     }
     
     let item = fd.find(x=>x.date===d);
-    if(item) fluidChartPoints.push({x,date:d,...item})
+    if(item) fluidChartPoints.push({x,date:d,...item});
   });
 }
 
-/* 수정사항 1 반영: 약품별 동일 날짜 다중 체크 처리 보완 */
 function renderMedicationChart(){
   const c=document.getElementById("medicationChart"),ctx=c.getContext("2d"),dpr=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;
   c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
@@ -508,7 +544,6 @@ function renderMedicationChart(){
   const L=100,R=20,T=20,B=35,iw=w-L-R,ih=h-T-B;
   const rowHeight = ih / meds.length;
 
-  // Y축 약품 라인 및 라벨
   meds.forEach((m, idx)=>{
     let y = T + rowHeight * idx + rowHeight/2;
     ctx.fillStyle="#334155";
@@ -523,7 +558,6 @@ function renderMedicationChart(){
     ctx.stroke();
   });
 
-  // 날짜축 및 데이터 포인트 체크
   dates.forEach((d, di)=>{
     let x = L + (dates.length === 1 ? iw/2 : iw * di / (dates.length - 1));
     
@@ -540,7 +574,6 @@ function renderMedicationChart(){
     ctx.lineTo(x, h - B);
     ctx.stroke();
 
-    // 해당 날짜(동일 날짜의 모든 기록 통합)의 투약 이벤트 검색
     let evs = (window.db.events||[]).filter(e => {
       let eDate = e.date ? e.date.split("T")[0] : "";
       return eDate === datePartOnly && e.type === "투약";
@@ -571,7 +604,6 @@ function renderMedicationChart(){
   });
 }
 
-/* 수정사항 2 반영: AI 분석 및 피드백 자동 생성 */
 function generateAIFeedback(){
   const feedbackEl = document.getElementById("aiFeedbackContent");
   if(!feedbackEl) return;
@@ -587,7 +619,6 @@ function generateAIFeedback(){
   let insights = [];
   const latestLab = labs.length ? labs[labs.length - 1] : null;
 
-  // 1. 신장 및 전해질 관련 패턴 분석
   if(latestLab) {
     if(latestLab.Cr != null && latestLab.Cr > 1.4) {
       insights.push(`⚠️ <b>신장 수치 경고</b>: 최신 Creatinine 수치가 <b>${latestLab.Cr} mg/dL</b>로 정상 상한선(1.4)을 초과했습니다. 음수량 확보 및 수액 투여 여부를 체크해주세요.`);
@@ -604,19 +635,17 @@ function generateAIFeedback(){
     }
   }
 
-  // 2. 증상 및 수치 상관관계 분석
   const recentEvents = events.slice(-10);
-  const vomitEvents = recentEvents.filter(e => e.title && (e.title.includes("구토") || e.memo.includes("구토")));
+  const vomitEvents = recentEvents.filter(e => e.title && (e.title.includes("구토") || (e.memo && e.memo.includes("구토"))));
   if(vomitEvents.length > 0) {
     insights.push(`💡 <b>증상 연관 피드백</b>: 최근 구토 증상이 <b>${vomitEvents.length}회</b> 기록되었습니다. 구토 지속 시 탈수로 인한 전해질 불균형(Na, Cl 저하) 및 BUN 상승이 나타날 수 있으니 음수량을 늘리거나 병원 진료를 고려하세요.`);
   }
 
-  const anorexiaEvents = recentEvents.filter(e => e.title && (e.title.includes("식욕") || e.title.includes("거식") || e.memo.includes("안먹")));
+  const anorexiaEvents = recentEvents.filter(e => e.title && (e.title.includes("식욕") || e.title.includes("거식") || (e.memo && e.memo.includes("안먹"))));
   if(anorexiaEvents.length > 0) {
     insights.push(`🍽️ <b>식사 관련 피드백</b>: 최근 식욕 부진 관련 기록이 확인되었습니다. 체중 감소 및 BUN/Cr 수치 변동 여부를 주기적으로 체크하세요.`);
   }
 
-  // 기본 권장문구
   if(insights.length === 0) {
     insights.push("✅ 현재 주요 바이탈 및 수치가 안정 범위에 있거나 특이 위험 패턴이 발견되지 않았습니다. 정기적인 기록을 지속해 주세요.");
   }
@@ -628,7 +657,7 @@ function renderAllCharts(){renderTabs();renderLabChart();renderFluidChart();rend
 function setupTooltip(wid,tid,getP,content){const wrap=document.getElementById(wid),tip=document.getElementById(tid);if(!wrap||!tip)return;const h=e=>{const ps=getP();if(!ps.length)return;const r=wrap.getBoundingClientRect(),cx=e.touches?e.touches[0].clientX:e.clientX,x=cx-r.left;let f=null,md=30;ps.forEach(p=>{let d=Math.abs(x-p.x);if(d<md){md=d;f=p}});if(f){tip.innerHTML=content(f);tip.style.display="block";let l=f.x+10;if(l+200>r.width)l=f.x-210;tip.style.left=l+"px";tip.style.top="20px"}else tip.style.display="none"};wrap.addEventListener("mousemove",h);wrap.addEventListener("mouseleave",()=>tip.style.display="none");wrap.addEventListener("touchstart",h,{passive:true});wrap.addEventListener("touchmove",h,{passive:true})}
 
 setupTooltip("chartWrap","chartTooltip",()=>labChartPoints,p=>`<b>${p.date.replace("T"," ")}</b><br>${metric}: <b>${p.value}</b><br><span style="font-size:10px;color:#94a3b8">(정상: ${p.refMin}~${p.refMax})</span>`);
-setupTooltip("fluidChartWrap","fluidChartTooltip",()=>fluidChartPoints,p=>`<b>${p.date.replace("T"," ")}</b><br>💧 음수량: <b>${p.drink}</b><br>💉 수액량: <b>${p.fluid}</b><br>📊 <b>합계: ${p.total}</b>`);
+setupTooltip("fluidChartWrap","fluidChartTooltip",()=>fluidChartPoints,p=>`<b>${p.date.replace("T"," ")}</b><br>💧 음수량: <b>${p.drink} ml</b><br>💉 수액량: <b>${p.fluid} ml</b><br>📊 <b>합계: ${p.total} ml</b>`);
 setupTooltip("medChartWrap","medChartTooltip",()=>medChartPoints,p=>`<b>${p.date.replace("T"," ")}</b><br>💊 약품: <b>${p.medName}</b><br>상세: ${p.details}`);
 
 function setupChartDrag(){const wrap=document.getElementById("chartWrap"),canvas=document.getElementById("chart");let sx=null,drag=false;canvas.addEventListener("pointerdown",e=>{sx=e.clientX;drag=false;canvas.setPointerCapture(e.pointerId);canvas.classList.add("dragging")});canvas.addEventListener("pointermove",e=>{if(sx===null)return;const dx=e.clientX-sx;if(Math.abs(dx)>25){drag=true;const all=getAllDatesSorted(),max=Math.max(0,all.length-visibleCount);if(dx>0)chartStartOffset=Math.min(max,chartStartOffset+1);else chartStartOffset=Math.max(0,chartStartOffset-1);sx=e.clientX;renderAllCharts()}});const end=()=>{sx=null;canvas.classList.remove("dragging")};canvas.addEventListener("pointerup",end);canvas.addEventListener("pointercancel",end)}
@@ -636,7 +665,9 @@ function setupChartDrag(){const wrap=document.getElementById("chartWrap"),canvas
 function renderTable(){
   const ds=[...new Set([...(window.db.labs||[]).map(x=>x.date),...(window.db.events||[]).map(x=>x.date)])].sort().reverse();
   document.getElementById("dataTable").innerHTML=ds.length?ds.map(date=>{
-    const labs=(window.db.labs||[]).filter(x=>x.date===date),ev=(window.db.events||[]).filter(x=>x.date===date),x=labs[0]||{},et=ev.length?ev.map(e=>`${e.type||"증상"}: ${e.title||"기록"}`).join(" / "):"—";
+    const labs=(window.db.labs||[]).filter(x=>x.date===date);
+    const ev=(window.db.events||[]).filter(x=>x.date===date && x.type!=="투약" && x.type!=="음수" && x.type!=="수액");
+    const x=labs[0]||{},et=ev.length?ev.map(e=>`${e.type||"증상"}: ${e.title||"기록"}`).join(" / "):"—";
     return `<tr>
       <td class="col-border sticky-date"><b>${date.replace("T"," ")}</b></td>
       <td>${formatCellVal(x.K, "K")}</td>
@@ -681,9 +712,9 @@ function moveMonth(n){calDate.setMonth(calDate.getMonth()+n);renderCalendar()}
 function openMedicationModal(){
   document.getElementById("medicationModal").style.display="flex";
   document.getElementById("medDate").value=nowDateISO();
-  document.getElementById("medCategory").value="투약";
   document.getElementById("medMemo").value="";
-  document.getElementById("fluidAmount").value="";
+  document.getElementById("batchFluidAmount").value="";
+  document.getElementById("batchDrinkAmount").value="";
   
   const grid = document.getElementById("medCheckboxGrid");
   grid.innerHTML = defaultMedList.map(m=>`
@@ -691,40 +722,40 @@ function openMedicationModal(){
       <input type="checkbox" name="medCheckItem" value="${m}"> ${m}
     </label>
   `).join("");
-  
-  onMedCategoryChange();
 }
 
-function onMedCategoryChange(){
-  const c=document.getElementById("medCategory").value;
-  document.getElementById("medicationSubSection").style.display=c==="투약"?"block":"none";
-  document.getElementById("fluidSubSection").style.display=c==="투약"?"none":"block";
-}
-
+/* [개선된 일괄 저장 로직] */
 function saveMedicationRecord(){
   const date=document.getElementById("medDate").value,
-        cat=document.getElementById("medCategory").value,
-        memo=document.getElementById("medMemo").value;
+        memo=document.getElementById("medMemo").value,
+        fluidAmt=document.getElementById("batchFluidAmount").value,
+        drinkAmt=document.getElementById("batchDrinkAmount").value;
 
   if(!window.db.events) window.db.events=[];
+  let addedCount = 0;
 
-  if(cat==="투약"){
-    const checkedMedItems = Array.from(document.querySelectorAll('input[name="medCheckItem"]:checked')).map(el => el.value);
+  // 1. 선택된 복약 항목 일괄 저장
+  const checkedMedItems = Array.from(document.querySelectorAll('input[name="medCheckItem"]:checked')).map(el => el.value);
+  checkedMedItems.forEach(item => {
+    window.db.events.push({id: Date.now() + Math.random(), date, type: "투약", title: item, memo});
+    addedCount++;
+  });
 
-    if(checkedMedItems.length === 0){
-      alert("복용한 약품을 최소 1개 이상 체크해주세요.");
-      return;
-    }
+  // 2. 수액량 입력 저장
+  if(fluidAmt && Number(fluidAmt) > 0){
+    window.db.events.push({id: Date.now() + Math.random(), date, type: "수액", title: `${fluidAmt}ml`, memo});
+    addedCount++;
+  }
 
-    checkedMedItems.forEach(item => {
-      let title = item;
-      window.db.events.push({id: Date.now() + Math.random(), date, type: cat, title, memo});
-    });
-  } else {
-    const a = document.getElementById("fluidAmount").value;
-    if(!a){alert("용량을 입력해주세요.");return}
-    let title = `${a}ml`;
-    window.db.events.push({id: Date.now() + Math.random(), date, type: cat, title, memo});
+  // 3. 음수량 입력 저장
+  if(drinkAmt && Number(drinkAmt) > 0){
+    window.db.events.push({id: Date.now() + Math.random(), date, type: "음수", title: `${drinkAmt}ml`, memo});
+    addedCount++;
+  }
+
+  if(addedCount === 0){
+    alert("투약 약품, 수액량, 음수량 중 최소 1개 이상 항목을 입력해주세요.");
+    return;
   }
 
   window.save();
