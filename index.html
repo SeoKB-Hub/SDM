@@ -54,6 +54,7 @@ thead tr:nth-child(2) .sticky-date { z-index: 8 !important; background: #f8fafc 
 .cal-day{height:75px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:4px;background:#fff;cursor:pointer;overflow:hidden;display:flex;flex-direction:column}
 .cal-day:nth-child(7n){border-right:0}.cal-day.other{background:#fafafa;color:#cbd5e1}.cal-num{font-weight:700;font-size:10px}
 .record{font-size:9px;margin-top:2px;padding:2px 4px;border-radius:4px;background:#eff6ff;color:#1d4ed8;font-weight:600;border-left:2px solid var(--primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
+.record.med{background:#ecfdf5;color:#047857;border-left-color:#10b981}
 .event{background:#f3e8ff;color:#6b21a8;border-left-color:#9333ea}
 .empty{text-align:center;padding:24px;color:var(--text-muted);font-size:12px}
 .modal{position:fixed;inset:0;background:#00000066;backdrop-filter:blur(2px);display:none;align-items:center;justify-content:center;z-index:30;padding:12px}
@@ -181,7 +182,7 @@ thead tr:nth-child(2) .sticky-date { z-index: 8 !important; background: #f8fafc 
 <div class="modal" id="medicationModal" onclick="if(event.target===this)closeModal('medicationModal')"><div class="modal-box">
 <h3 style="margin-top:0;font-size:16px">💊 일괄 데이터 입력 (투약 / 수액 / 음수)</h3>
 <p class="muted">한 번에 일괄 기록이 가능합니다. 해당 사항이 있는 항목만 입력하세요.</p>
-<div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600">기록 일자<br><input id="medDate" type="date" style="width:100%;margin-top:2px"></label></div>
+<div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600">기록 일시<br><input id="medDate" type="datetime-local" style="width:100%;margin-top:2px"></label></div>
 
 <!-- 1. 투약 입력 -->
 <div class="batch-input-section">
@@ -236,9 +237,54 @@ thead tr:nth-child(2) .sticky-date { z-index: 8 !important; background: #f8fafc 
 <p><input id="eventTitle" style="width:100%" placeholder="제목 입력 (예: 구토 1회, 무기력)"></p><p><textarea id="eventMemo" style="width:100%;height:80px" placeholder="상세 내용 입력"></textarea></p><div style="text-align:right"><button class="btn" onclick="closeModal('eventModal')">취소</button> <button class="btn primary" onclick="saveEvent()">저장</button></div>
 </div></div>
 
+<!-- 날짜 상세 종합 모달 (투약/수액/음수 및 증상 분리 관리) -->
 <div class="modal" id="dayModal" onclick="if(event.target===this)closeModal('dayModal')"><div class="modal-box">
-<h3 id="dayModalTitle" style="margin-top:0;font-size:16px">날짜 상세</h3><div style="margin-bottom:14px"><div style="font-weight:700;font-size:13px;margin-bottom:6px">🧪 검사/의료기록</div><div id="dayLabBox"></div></div><div style="margin-bottom:14px"><div style="font-weight:700;font-size:13px;margin-bottom:6px">📝 증상 목록</div><div id="dayEventList"></div></div><hr style="border:0;border-top:1px solid var(--border);margin:14px 0">
-<div id="eventEditSection"><div style="font-weight:700;font-size:13px;margin-bottom:6px">✏️ 선택한 증상 수정 / 삭제</div><input id="editEventId" type="hidden"><p><label>일시<br><input id="editEventDate" type="datetime-local" style="width:100%"></label></p><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px"><label>종류<br><select id="editEventType" style="width:100%"><option>증상</option><option>식사</option><option>대소변</option><option>기타</option></select></label><label>제목<br><input id="editEventTitle" style="width:100%"></label></div><p><label>상세 내용<br><textarea id="editEventMemo" style="width:100%;height:70px"></textarea></label></p><div style="display:flex;justify-content:space-between"><button class="btn danger" onclick="deleteEvent()">증상 삭제</button><div><button class="btn" onclick="closeModal('dayModal')">닫기</button><button class="btn primary" onclick="updateEvent()">수정 저장</button></div></div></div>
+<h3 id="dayModalTitle" style="margin-top:0;font-size:16px">날짜 상세</h3>
+
+<!-- 1. 의료 기록 -->
+<div style="margin-bottom:14px"><div style="font-weight:700;font-size:13px;margin-bottom:6px">🧪 검사/의료기록</div><div id="dayLabBox"></div></div>
+
+<!-- 2. 음수/수액 및 투약 목록 -->
+<div style="margin-bottom:14px"><div style="font-weight:700;font-size:13px;margin-bottom:6px">💊 음수 / 수액 / 투약 목록</div><div id="dayMedList"></div></div>
+
+<!-- 3. 증상 목록 -->
+<div style="margin-bottom:14px"><div style="font-weight:700;font-size:13px;margin-bottom:6px">📝 증상 목록</div><div id="dayEventList"></div></div>
+
+<hr style="border:0;border-top:1px solid var(--border);margin:14px 0">
+
+<!-- 4. 음수/수액/투약 수정/삭제 전용 영역 -->
+<div id="medEditSection" style="display:none; margin-bottom:14px; background:#f0fdf4; padding:10px; border-radius:8px; border:1px solid #bbf7d0;">
+  <div style="font-weight:700;font-size:13px;margin-bottom:6px;color:#15803d">✏️ 선택한 [음수/수액/투약] 수정 및 삭제</div>
+  <input id="editMedId" type="hidden">
+  <p><label>일시<br><input id="editMedDate" type="datetime-local" style="width:100%"></label></p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+    <label>구분<br><select id="editMedType" style="width:100%"><option value="투약">투약</option><option value="수액">수액</option><option value="음수">음수</option></select></label>
+    <label>내용/명칭/용량<br><input id="editMedTitle" style="width:100%"></label>
+  </div>
+  <p><label>메모<br><textarea id="editMedMemo" style="width:100%;height:60px"></textarea></label></p>
+  <div style="display:flex;justify-content:space-between">
+    <button class="btn danger" onclick="deleteMedRecord()">항목 삭제</button>
+    <div><button class="btn" onclick="closeMedEdit()">취소</button> <button class="btn primary" onclick="updateMedRecord()">수정 저장</button></div>
+  </div>
+</div>
+
+<!-- 5. 증상 수정/삭제 전용 영역 -->
+<div id="eventEditSection" style="display:none; background:#faf5ff; padding:10px; border-radius:8px; border:1px solid #e9d5ff;">
+  <div style="font-weight:700;font-size:13px;margin-bottom:6px;color:#6b21a8">✏️ 선택한 [증상] 수정 및 삭제</div>
+  <input id="editEventId" type="hidden">
+  <p><label>일시<br><input id="editEventDate" type="datetime-local" style="width:100%"></label></p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+    <label>종류<br><select id="editEventType" style="width:100%"><option value="증상">증상</option><option value="식사">식사</option><option value="대소변">대소변</option><option value="기타">기타</option></select></label>
+    <label>제목<br><input id="editEventTitle" style="width:100%"></label>
+  </div>
+  <p><label>상세 내용<br><textarea id="editEventMemo" style="width:100%;height:60px"></textarea></label></p>
+  <div style="display:flex;justify-content:space-between">
+    <button class="btn danger" onclick="deleteEvent()">증상 삭제</button>
+    <div><button class="btn" onclick="closeEventEdit()">취소</button> <button class="btn primary" onclick="updateEvent()">수정 저장</button></div>
+  </div>
+</div>
+
+<div style="text-align:right;margin-top:14px;"><button class="btn" onclick="closeModal('dayModal')">닫기</button></div>
 </div></div>
 
 <script type="module">
@@ -247,8 +293,29 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
 const firebaseConfig={apiKey:"AIzaSyB7YRG0l2PFXbCFaNb_6OCXo-wQup-CChc",authDomain:"mimi-a0134.firebaseapp.com",databaseURL:"https://mimi-a0134-default-rtdb.firebaseio.com",projectId:"mimi-a0134",storageBucket:"mimi-a0134.firebasestorage.app",messagingSenderId:"179296309633",appId:"1:179296309633:web:73a5d4276bb5e96185d880",measurementId:"G-72X43NKJR0"};
 const app=initializeApp(firebaseConfig),firebaseDb=getDatabase(app);
 window.db={profile:{name:"미미",species:"Poodle",weight:null},labs:[],events:[]};
-window.save=function(){set(ref(firebaseDb,'mimi_medical_data'),window.db).catch(err=>console.error("Firebase 저장 오류:",err));};
-onValue(ref(firebaseDb,'mimi_medical_data'),snapshot=>{const val=snapshot.val(),badge=document.getElementById("syncBadge");if(val)window.db={profile:val.profile||{name:"미미"},labs:val.labs||[],events:val.events||[]};if(badge){badge.textContent="🟢 실시간 동기화됨";badge.classList.add("online")}window.render();});
+
+function normalizeDateTime(dStr){
+  if(!dStr) return nowDateTimeISO();
+  if(dStr.length === 10) return dStr + "T12:00";
+  return dStr;
+}
+
+window.save=function(){
+  if(window.db.labs) window.db.labs.forEach(x => x.date = normalizeDateTime(x.date));
+  if(window.db.events) window.db.events.forEach(x => x.date = normalizeDateTime(x.date));
+  set(ref(firebaseDb,'mimi_medical_data'),window.db).catch(err=>console.error("Firebase 저장 오류:",err));
+};
+
+onValue(ref(firebaseDb,'mimi_medical_data'),snapshot=>{
+  const val=snapshot.val(),badge=document.getElementById("syncBadge");
+  if(val){
+    window.db={profile:val.profile||{name:"미미"},labs:val.labs||[],events:val.events||[]};
+    if(window.db.labs) window.db.labs.forEach(x => x.date = normalizeDateTime(x.date));
+    if(window.db.events) window.db.events.forEach(x => x.date = normalizeDateTime(x.date));
+  }
+  if(badge){badge.textContent="🟢 실시간 동기화됨";badge.classList.add("online")}
+  window.render();
+});
 </script>
 
 <script>
@@ -262,7 +329,6 @@ function nowDateTimeISO(){const n=new Date();n.setMinutes(n.getMinutes()-n.getTi
 function fmt(v){return v==null||v===""?"—":v}
 function sortedLabs(){return [...(window.db.labs||[])].sort((a,b)=>a.date.localeCompare(b.date))}
 
-/* 각 항목별 [코드, 명칭, 단위, 차트색상, 정상하한선, 정상상한선] 정의 */
 const allMetrics=[
   ["K","K","mmol/L","#2563eb",3.9,5.1],
   ["Na","Na","mmol/L","#059669",145,151],
@@ -416,7 +482,7 @@ function renderLabChart(){
     
     let parts = d.split("T");
     let datePart = parts[0];
-    let timePart = parts[1] ? parts[1].slice(0,5) : "";
+    let timePart = parts[1] ? parts[1].slice(0,5) : "12:00";
     let dateSplit = datePart.split("-");
 
     ctx.fillStyle="#64748b";
@@ -428,11 +494,9 @@ function renderLabChart(){
     ctx.font="bold 11px sans-serif";
     ctx.fillText(dateSplit[2] + "일", x, h - 11);
 
-    if(timePart){
-      ctx.fillStyle="#64748b";
-      ctx.font="9px sans-serif";
-      ctx.fillText(timePart, x, h);
-    }
+    ctx.fillStyle="#64748b";
+    ctx.font="9px sans-serif";
+    ctx.fillText(timePart, x, h);
   });
 
   pts.forEach(p=>{
@@ -446,7 +510,6 @@ function renderLabChart(){
 
 function parseFluidValue(s){if(!s)return 0;const m=String(s).match(/(\d+(\.\d+)?)/);return m?parseFloat(m[1]):0}
 
-/* [개선된 음수/수액량 차트: 막대+선 혼합 누적 형태] */
 function renderFluidChart(){
   const c=document.getElementById("fluidChart"),ctx=c.getContext("2d"),dpr=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;
   c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
@@ -474,12 +537,10 @@ function renderFluidChart(){
 
   const barWidth = Math.min(24, Math.max(8, iw / dates.length * 0.4));
 
-  // 1. 당일 누적 막대 그리기 (음수: 청록색, 수액: 파란색 쌓기)
   fd.forEach((d, i)=>{
     let x = L + (dates.length===1 ? iw/2 : iw*i/(dates.length-1));
     let baseY = T + ih;
 
-    // 음수 막대
     if(d.drink > 0){
       let hDrink = (d.drink / maxVal) * ih;
       ctx.fillStyle = "#06b6d4";
@@ -487,7 +548,6 @@ function renderFluidChart(){
       baseY -= hDrink;
     }
 
-    // 수액 막대 (음수 위에 적층)
     if(d.fluid > 0){
       let hFluid = (d.fluid / maxVal) * ih;
       ctx.fillStyle = "#2563eb";
@@ -495,7 +555,6 @@ function renderFluidChart(){
     }
   });
 
-  // 2. 총량 추이 꺾은선 그리기 (보라색 점선 + 원형 포인트)
   ctx.strokeStyle="#8b5cf6";ctx.lineWidth=2;ctx.setLineDash([3,3]);ctx.beginPath();
   fd.forEach((d,i)=>{
     let x=L+(dates.length===1?iw/2:iw*i/(dates.length-1)),y=T+ih*(maxVal-d.total)/maxVal;
@@ -508,13 +567,12 @@ function renderFluidChart(){
     ctx.fillStyle="#8b5cf6";ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();
   });
   
-  // X축 날짜 렌더링
   dates.forEach((d,i)=>{
     let x=L+(dates.length===1?iw/2:iw*i/(dates.length-1));
     ctx.textAlign="center";
     let parts = d.split("T");
     let datePart = parts[0];
-    let timePart = parts[1] ? parts[1].slice(0,5) : "";
+    let timePart = parts[1] ? parts[1].slice(0,5) : "12:00";
     let dateSplit = datePart.split("-");
     
     ctx.fillStyle="#64748b";ctx.font="9px sans-serif";
@@ -524,10 +582,8 @@ function renderFluidChart(){
     ctx.fillStyle="#0f172a";ctx.font="bold 11px sans-serif";
     ctx.fillText(dateSplit[2] + "일", x, h - 11);
 
-    if(timePart) {
-      ctx.fillStyle="#64748b";ctx.font="9px sans-serif";
-      ctx.fillText(timePart, x, h);
-    }
+    ctx.fillStyle="#64748b";ctx.font="9px sans-serif";
+    ctx.fillText(timePart, x, h);
     
     let item = fd.find(x=>x.date===d);
     if(item) fluidChartPoints.push({x,date:d,...item});
@@ -561,12 +617,14 @@ function renderMedicationChart(){
   dates.forEach((d, di)=>{
     let x = L + (dates.length === 1 ? iw/2 : iw * di / (dates.length - 1));
     
-    let datePartOnly = d.split("T")[0];
+    let parts = d.split("T");
+    let datePartOnly = parts[0];
+    let timePartOnly = parts[1] ? parts[1].slice(0,5) : "";
     let dateSplit = datePartOnly.split("-");
     ctx.fillStyle="#64748b";
     ctx.font="9px sans-serif";
     ctx.textAlign="center";
-    ctx.fillText(`${dateSplit[1]}/${dateSplit[2]}`, x, h - 10);
+    ctx.fillText(`${dateSplit[1]}/${dateSplit[2]}${timePartOnly ? ' ' + timePartOnly : ''}`, x, h - 10);
 
     ctx.strokeStyle="#f8fafc";
     ctx.beginPath();
@@ -574,10 +632,7 @@ function renderMedicationChart(){
     ctx.lineTo(x, h - B);
     ctx.stroke();
 
-    let evs = (window.db.events||[]).filter(e => {
-      let eDate = e.date ? e.date.split("T")[0] : "";
-      return eDate === datePartOnly && e.type === "투약";
-    });
+    let evs = (window.db.events||[]).filter(e => e.date === d && e.type === "투약");
     
     meds.forEach((m, idx)=>{
       let y = T + rowHeight * idx + rowHeight/2;
@@ -702,7 +757,15 @@ function renderCalendar(){
   body=cells.map(c=>{
     let ds=dateKey(c.date),labs=(window.db.labs||[]).filter(x=>x.date.startsWith(ds)),ev=(window.db.events||[]).filter(x=>x.date.startsWith(ds)),r=[];
     labs.forEach(x=>{r.push(`<div class="record">${x.hospital||"검사"}</div>`)});
-    ev.forEach(x=>{r.push(`<div class="record event">${x.title||"증상"}</div>`)});
+    
+    // 달력상에서 음수/수액/투약과 증상 시각적 분리
+    ev.forEach(x=>{
+      if(x.type==="투약"||x.type==="수액"||x.type==="음수"){
+        r.push(`<div class="record med">[${x.type}] ${x.title||""}</div>`);
+      } else {
+        r.push(`<div class="record event">[${x.type||"증상"}] ${x.title||"증상"}</div>`);
+      }
+    });
     return`<div class="cal-day ${c.other?"other":""}" onclick="openDayEvents('${ds}')"><div class="cal-num">${c.n}</div>${r.join("")}</div>`
   }).join("");
   document.getElementById("calendar").innerHTML=head+body
@@ -711,7 +774,7 @@ function moveMonth(n){calDate.setMonth(calDate.getMonth()+n);renderCalendar()}
 
 function openMedicationModal(){
   document.getElementById("medicationModal").style.display="flex";
-  document.getElementById("medDate").value=nowDateISO();
+  document.getElementById("medDate").value=nowDateTimeISO();
   document.getElementById("medMemo").value="";
   document.getElementById("batchFluidAmount").value="";
   document.getElementById("batchDrinkAmount").value="";
@@ -724,30 +787,27 @@ function openMedicationModal(){
   `).join("");
 }
 
-/* [개선된 일괄 저장 로직] */
 function saveMedicationRecord(){
-  const date=document.getElementById("medDate").value,
-        memo=document.getElementById("medMemo").value,
+  let date=document.getElementById("medDate").value;
+  if(date && date.length === 10) date += "T12:00";
+  const memo=document.getElementById("medMemo").value,
         fluidAmt=document.getElementById("batchFluidAmount").value,
         drinkAmt=document.getElementById("batchDrinkAmount").value;
 
   if(!window.db.events) window.db.events=[];
   let addedCount = 0;
 
-  // 1. 선택된 복약 항목 일괄 저장
   const checkedMedItems = Array.from(document.querySelectorAll('input[name="medCheckItem"]:checked')).map(el => el.value);
   checkedMedItems.forEach(item => {
     window.db.events.push({id: Date.now() + Math.random(), date, type: "투약", title: item, memo});
     addedCount++;
   });
 
-  // 2. 수액량 입력 저장
   if(fluidAmt && Number(fluidAmt) > 0){
     window.db.events.push({id: Date.now() + Math.random(), date, type: "수액", title: `${fluidAmt}ml`, memo});
     addedCount++;
   }
 
-  // 3. 음수량 입력 저장
   if(drinkAmt && Number(drinkAmt) > 0){
     window.db.events.push({id: Date.now() + Math.random(), date, type: "음수", title: `${drinkAmt}ml`, memo});
     addedCount++;
@@ -788,14 +848,124 @@ function deleteLabRecord(){const d=document.getElementById("medicalDate").value;
 function deleteLabRecordByDate(d){if(!confirm(`${d.replace("T"," ")} 의료기록을 삭제할까요?`))return;window.db.labs=(window.db.labs||[]).filter(x=>x.date!==d);window.save();closeModal("dayModal")}
 function openEvent(date){document.getElementById("eventModal").style.display="flex";let d=date||nowDateTimeISO();if(d.length===10)d+="T12:00";document.getElementById("eventDate").value=d;document.getElementById("eventTitle").value="";document.getElementById("eventMemo").value=""}
 function closeModal(id){document.getElementById(id).style.display="none"}
-function saveEvent(){const date=document.getElementById("eventDate").value,title=document.getElementById("eventTitle").value||"증상";if(!window.db.events)window.db.events=[];window.db.events.push({id:Date.now()+Math.random(),date,type:document.getElementById("eventType").value,title,memo:document.getElementById("eventMemo").value});window.save();closeModal("eventModal")}
-function openDayEvents(ds){document.getElementById("dayModalTitle").textContent=`${ds} 상세`;const labs=(window.db.labs||[]).filter(x=>x.date.startsWith(ds)),lb=document.getElementById("dayLabBox");lb.innerHTML=labs.length?labs.map(l=>`<div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:10px;margin-bottom:6px"><div><b>🏥 ${l.hospital||"의료기관"}</b> <span class="muted">(${l.date.includes("T")?l.date.split("T")[1]:""})</span><div class="muted" style="margin-top:2px">K ${fmt(l.K)} | Cr ${fmt(l.Cr)} | BUN ${fmt(l.BUN)}</div></div><div style="display:flex;gap:4px"><button class="btn" style="padding:4px 8px;font-size:11px" onclick="openMedicalUpload('${l.date}')">✏️ 수정</button><button class="btn danger" style="padding:4px 8px;font-size:11px" onclick="deleteLabRecordByDate('${l.date}')">🗑️ 삭제</button></div></div>`).join(""):`<div class="empty" style="padding:16px">등록된 의료기록이 없습니다. <button class="btn primary" style="margin-left:6px;padding:4px 8px;min-height:28px;font-size:11px" onclick="openMedicalUpload('${ds}',true)">＋ 의료기록 추가</button></div>`;const ev=(window.db.events||[]).filter(e=>e.date.startsWith(ds)),list=document.getElementById("dayEventList"),sec=document.getElementById("eventEditSection");if(!ev.length){list.innerHTML='<div class="empty" style="padding:16px">등록된 증상이 없습니다.</div>';sec.style.display="none";document.getElementById("editEventId").value=""}else{sec.style.display="block";list.innerHTML=ev.map(e=>`<div class="card" style="margin-bottom:6px;cursor:pointer;padding:8px" onclick="selectEventForEdit('${e.id}')"><b>${e.title||"증상"}</b> <span class="muted">[${e.type||"증상"}] (${e.date.includes("T")?e.date.split("T")[1]:""})</span><div class="muted" style="margin-top:2px">${e.memo||"내용 없음"}</div></div>`).join("");selectEventForEdit(ev[0].id)}document.getElementById("dayModal").style.display="flex"}
-function selectEventForEdit(id){const e=(window.db.events||[]).find(x=>String(x.id)===String(id));if(!e)return;document.getElementById("editEventId").value=e.id;document.getElementById("editEventDate").value=e.date;document.getElementById("editEventType").value=e.type||"기타";document.getElementById("editEventTitle").value=e.title||"";document.getElementById("editEventMemo").value=e.memo||""}
-function updateEvent(){const id=document.getElementById("editEventId").value,e=(window.db.events||[]).find(x=>String(x.id)===String(id));if(!e)return;e.date=document.getElementById("editEventDate").value;e.type=document.getElementById("editEventType").value;e.title=document.getElementById("editEventTitle").value||"증상";e.memo=document.getElementById("editEventMemo").value;window.save();closeModal("dayModal")}
-function deleteEvent(){const id=document.getElementById("editEventId").value;if(!id)return;if(!confirm("이 증상 기록을 삭제할까요?"))return;window.db.events=(window.db.events||[]).filter(x=>String(x.id)!==String(id));window.save();closeModal("dayModal")}
+function saveEvent(){
+  let date=document.getElementById("eventDate").value;
+  if(date && date.length === 10) date += "T12:00";
+  const title=document.getElementById("eventTitle").value||"증상";
+  if(!window.db.events)window.db.events=[];
+  window.db.events.push({id:Date.now()+Math.random(),date,type:document.getElementById("eventType").value,title,memo:document.getElementById("eventMemo").value});
+  window.save();closeModal("eventModal")
+}
+
+/* [달력 클릭 시 개별 관리 로직 개선] */
+function openDayEvents(ds){
+  document.getElementById("dayModalTitle").textContent=`${ds} 상세 기록`;
+  closeMedEdit();
+  closeEventEdit();
+
+  // 1. 의료 기록
+  const labs=(window.db.labs||[]).filter(x=>x.date.startsWith(ds)),lb=document.getElementById("dayLabBox");
+  lb.innerHTML=labs.length?labs.map(l=>`<div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:10px;margin-bottom:6px"><div><b>🏥 ${l.hospital||"의료기관"}</b> <span class="muted">(${l.date.includes("T")?l.date.split("T")[1]:""})</span><div class="muted" style="margin-top:2px">K ${fmt(l.K)} | Cr ${fmt(l.Cr)} | BUN ${fmt(l.BUN)}</div></div><div style="display:flex;gap:4px"><button class="btn" style="padding:4px 8px;font-size:11px" onclick="openMedicalUpload('${l.date}')">✏️ 수정</button><button class="btn danger" style="padding:4px 8px;font-size:11px" onclick="deleteLabRecordByDate('${l.date}')">🗑️ 삭제</button></div></div>`).join(""):`<div class="empty" style="padding:12px">등록된 의료기록이 없습니다. <button class="btn primary" style="margin-left:6px;padding:4px 8px;min-height:28px;font-size:11px" onclick="openMedicalUpload('${ds}',true)">＋ 의료기록 추가</button></div>`;
+  
+  // 2. 음수 / 수액 / 투약 항목 데이터 독립 분리
+  const medEv=(window.db.events||[]).filter(e=>e.date.startsWith(ds) && (e.type==="투약" || e.type==="수액" || e.type==="음수")),
+        medList=document.getElementById("dayMedList");
+  if(!medEv.length){
+    medList.innerHTML='<div class="empty" style="padding:10px">등록된 음수/수액/투약 기록이 없습니다.</div>';
+  } else {
+    medList.innerHTML=medEv.map(e=>`<div class="card" style="margin-bottom:6px;cursor:pointer;padding:8px;border-left:3px solid #10b981;" onclick="selectMedForEdit('${e.id}')"><b>[${e.type}] ${e.title||""}</b> <span class="muted">(${e.date.includes("T")?e.date.split("T")[1]:""})</span><div class="muted" style="margin-top:2px">${e.memo||"메모 없음"}</div></div>`).join("");
+  }
+
+  // 3. 순수 증상 항목 데이터 독립 분리
+  const eventEv=(window.db.events||[]).filter(e=>e.date.startsWith(ds) && e.type!=="투약" && e.type!=="수액" && e.type!=="음수"),
+        eventList=document.getElementById("dayEventList");
+  if(!eventEv.length){
+    eventList.innerHTML='<div class="empty" style="padding:10px">등록된 증상이 없습니다.</div>';
+  } else {
+    eventList.innerHTML=eventEv.map(e=>`<div class="card" style="margin-bottom:6px;cursor:pointer;padding:8px;border-left:3px solid #9333ea;" onclick="selectEventForEdit('${e.id}')"><b>[${e.type||"증상"}] ${e.title||"증상"}</b> <span class="muted">(${e.date.includes("T")?e.date.split("T")[1]:""})</span><div class="muted" style="margin-top:2px">${e.memo||"상세 내용 없음"}</div></div>`).join("");
+  }
+
+  document.getElementById("dayModal").style.display="flex";
+}
+
+/* 음수/수액/투약 선택 및 수정 함수들 */
+function selectMedForEdit(id){
+  closeEventEdit();
+  const e=(window.db.events||[]).find(x=>String(x.id)===String(id));
+  if(!e)return;
+  document.getElementById("editMedId").value=e.id;
+  document.getElementById("editMedDate").value=e.date;
+  document.getElementById("editMedType").value=e.type||"투약";
+  document.getElementById("editMedTitle").value=e.title||"";
+  document.getElementById("editMedMemo").value=e.memo||"";
+  document.getElementById("medEditSection").style.display="block";
+}
+function closeMedEdit(){
+  document.getElementById("medEditSection").style.display="none";
+  document.getElementById("editMedId").value="";
+}
+function updateMedRecord(){
+  const id=document.getElementById("editMedId").value,e=(window.db.events||[]).find(x=>String(x.id)===String(id));
+  if(!e)return;
+  let d=document.getElementById("editMedDate").value;
+  if(d && d.length === 10) d += "T12:00";
+  e.date=d;
+  e.type=document.getElementById("editMedType").value;
+  e.title=document.getElementById("editMedTitle").value;
+  e.memo=document.getElementById("editMedMemo").value;
+  window.save();
+  closeModal("dayModal");
+}
+function deleteMedRecord(){
+  const id=document.getElementById("editMedId").value;
+  if(!id)return;
+  if(!confirm("이 투약/수액/음수 기록을 삭제할까요?"))return;
+  window.db.events=(window.db.events||[]).filter(x=>String(x.id)!==String(id));
+  window.save();
+  closeModal("dayModal");
+}
+
+/* 증상 선택 및 수정 함수들 */
+function selectEventForEdit(id){
+  closeMedEdit();
+  const e=(window.db.events||[]).find(x=>String(x.id)===String(id));
+  if(!e)return;
+  document.getElementById("editEventId").value=e.id;
+  document.getElementById("editEventDate").value=e.date;
+  document.getElementById("editEventType").value=e.type||"증상";
+  document.getElementById("editEventTitle").value=e.title||"";
+  document.getElementById("editEventMemo").value=e.memo||"";
+  document.getElementById("eventEditSection").style.display="block";
+}
+function closeEventEdit(){
+  document.getElementById("eventEditSection").style.display="none";
+  document.getElementById("editEventId").value="";
+}
+function updateEvent(){
+  const id=document.getElementById("editEventId").value,e=(window.db.events||[]).find(x=>String(x.id)===String(id));
+  if(!e)return;
+  let d=document.getElementById("editEventDate").value;
+  if(d && d.length === 10) d += "T12:00";
+  e.date=d;
+  e.type=document.getElementById("editEventType").value;
+  e.title=document.getElementById("editEventTitle").value||"증상";
+  e.memo=document.getElementById("editEventMemo").value;
+  window.save();
+  closeModal("dayModal");
+}
+function deleteEvent(){
+  const id=document.getElementById("editEventId").value;
+  if(!id)return;
+  if(!confirm("이 증상 기록을 삭제할까요?"))return;
+  window.db.events=(window.db.events||[]).filter(x=>String(x.id)!==String(id));
+  window.save();
+  closeModal("dayModal");
+}
 
 function saveManualMedicalRecord(){
-  const date=document.getElementById("medicalDate").value,hospital=document.getElementById("hospitalName").value,num=id=>{const v=document.getElementById(id).value;return v===""?null:Number(v)},
+  let date=document.getElementById("medicalDate").value;
+  if(date && date.length === 10) date += "T12:00";
+  const hospital=document.getElementById("hospitalName").value,num=id=>{const v=document.getElementById(id).value;return v===""?null:Number(v)},
   rec={
     date,hospital,
     K:num("manualK"),Cr:num("manualCr"),BUN:num("manualBUN"),HCO3:num("manualHCO3"),pH:num("manualPH"),Phos:num("manualPhos"),
