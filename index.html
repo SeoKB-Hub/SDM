@@ -182,7 +182,7 @@ thead tr:nth-child(2) .sticky-date { z-index: 8 !important; background: #f8fafc 
 <div class="modal" id="medicationModal" onclick="if(event.target===this)closeModal('medicationModal')"><div class="modal-box">
 <h3 style="margin-top:0;font-size:16px">💊 일괄 데이터 입력 (투약 / 수액 / 음수)</h3>
 <p class="muted">한 번에 일괄 기록이 가능합니다. 해당 사항이 있는 항목만 입력하세요.</p>
-<div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600">기록 일시<br><input id="medDate" type="datetime-local" style="width:100%;margin-top:2px"></label></div>
+<div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600">기록 날짜<br><input id="medDate" type="date" style="width:100%;margin-top:2px"></label></div>
 
 <!-- 1. 투약 입력 -->
 <div class="batch-input-section">
@@ -774,7 +774,7 @@ function moveMonth(n){calDate.setMonth(calDate.getMonth()+n);renderCalendar()}
 
 function openMedicationModal(){
   document.getElementById("medicationModal").style.display="flex";
-  document.getElementById("medDate").value=nowDateTimeISO();
+  document.getElementById("medDate").value=nowDateISO();
   document.getElementById("medMemo").value="";
   document.getElementById("batchFluidAmount").value="";
   document.getElementById("batchDrinkAmount").value="";
@@ -788,8 +788,10 @@ function openMedicationModal(){
 }
 
 function saveMedicationRecord(){
-  let date=document.getElementById("medDate").value;
-  if(date && date.length === 10) date += "T12:00";
+  let dateInput=document.getElementById("medDate").value;
+  if(!dateInput) dateInput = nowDateISO();
+  const date = dateInput + "T12:00";
+  
   const memo=document.getElementById("medMemo").value,
         fluidAmt=document.getElementById("batchFluidAmount").value,
         drinkAmt=document.getElementById("batchDrinkAmount").value;
