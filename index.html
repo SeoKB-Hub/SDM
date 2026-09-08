@@ -322,6 +322,21 @@ let metric="K",calDate=new Date(),visibleCount=10,chartStartOffset=0;
 let labChartPoints=[],fluidChartPoints=[],medChartPoints=[];
 const defaultMedList = ["간약", "젠토닐", "에피클", "오메가3", "레날어드밴스드", "아미나바스타", "아조딜", "식욕촉진제(크림)", "카리메트", "로포타", "인트라젠"];
 
+// 축약어 매핑 객체
+const medShortNames = {
+  "간약": "간약",
+  "젠토닐": "젠토닐",
+  "에피클": "에피클",
+  "오메가3": "오메가",
+  "레날어드밴스드": "레날",
+  "아미나바스타": "아미나",
+  "아조딜": "아조딜",
+  "식욕촉진제(크림)": "식욕촉진",
+  "카리메트": "카리메트",
+  "로포타": "로포타",
+  "인트라젠": "인트라"
+};
+
 document.getElementById("asOf").value=new Date().toISOString().slice(0,10);
 function nowDateISO(){const n=new Date();n.setMinutes(n.getMinutes()-n.getTimezoneOffset());return n.toISOString().slice(0,10)}
 function nowDateTimeISO(){const n=new Date();n.setMinutes(n.getMinutes()-n.getTimezoneOffset());return n.toISOString().slice(0,16)}
@@ -635,7 +650,8 @@ function renderMedicationChart(){
   });
 
   const meds = activeMeds.length > 0 ? activeMeds : defaultMedList;
-  const L=100,R=20,T=20,B=35,iw=w-L-R,ih=h-T-B;
+  // 좌측 여백(L)을 축약어 크기에 맞춰 줄임 (기존 100 -> 60)
+  const L=60,R=20,T=20,B=35,iw=w-L-R,ih=h-T-B;
   const rowHeight = ih / meds.length;
 
   meds.forEach((m, idx)=>{
@@ -643,7 +659,9 @@ function renderMedicationChart(){
     ctx.fillStyle="#334155";
     ctx.font="10px sans-serif";
     ctx.textAlign="right";
-    ctx.fillText(m, L - 10, y + 3);
+    // 축약어가 존재할 경우 축약어로 표시
+    const displayName = medShortNames[m] || m;
+    ctx.fillText(displayName, L - 8, y + 3);
 
     ctx.strokeStyle="#f1f5f9";
     ctx.beginPath();
