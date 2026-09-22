@@ -982,7 +982,15 @@ function saveManualMedicalRecord(){
   window.save();closeModal("medicalModal");closeModal("dayModal")
 }
 
-function exportData(){const b=new Blob([JSON.stringify(window.db,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.revokeObjectURL(a.href);a.download=`mimi_medical_${dateKey(new Date())}.json`;a.click()}
+function exportData(){
+  const b=new Blob([JSON.stringify(window.db,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  const url=URL.createObjectURL(b);
+  a.href=url;
+  a.download=`mimi_medical_${dateKey(new Date())}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 function importData(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const p=JSON.parse(ev.target.result);if(p.labs&&p.events){window.db=p;window.save();alert("복원되었습니다.")}else alert("올바르지 않은 파일 형식입니다.")}catch(err){alert("오류가 발생했습니다.")}};r.readAsText(f)}
 function render(){renderAllCharts();renderTable();renderCalendar()}
 window.render=render;
