@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>미미 의료기록</title>
 <style>
 :root {
@@ -100,6 +100,67 @@ thead tr:nth-child(2) .sticky-date { z-index: 8 !important; background: #f8fafc 
 }
 
 @media(max-width:768px){.card{padding:8px 9px}.form-grid{grid-template-columns:repeat(2,1fr)}.med-checkbox-grid{grid-template-columns:repeat(1,1fr)}}
+
+/* 화면 바깥으로 밀리지 않게 내부 스크롤 영역만 확장합니다. */
+html,body{width:100%;min-width:0}
+.container,.card,.header-inner,.spec-legend-bar,.tabs,.table-container{min-width:0;max-width:100%}
+.container{max-width:1400px}
+input,select,textarea{min-width:0;max-width:100%}
+textarea{resize:vertical}
+.form-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.form-grid label,.modal-box label{min-width:0;overflow-wrap:anywhere}
+.spec-legend-bar{gap:10px;flex-wrap:wrap}
+.spec-legend-bar .tabs{flex:1 1 360px;min-width:0}
+.spec-range-badge{flex:0 0 auto;white-space:normal}
+.sync-controller input[type=range]{min-width:60px;padding:0}
+.sync-controller output{color:var(--primary);margin-left:6px}
+.chart-navigation{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.chart-navigation span{font-size:12px;color:var(--text-muted);text-align:center}
+.btn:disabled{opacity:.45;cursor:default}
+.chart-scroll{width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.chart-content{width:100%;min-width:0}
+.chart-event-labels{display:flex;justify-content:space-between;align-items:flex-start;padding-top:8px;padding-bottom:14px;gap:0}
+.chart-event-labels:empty{display:none}
+.chart-event-column{flex:none;min-width:0}
+.chart-event-date{font-size:11px;color:#6b21a8;font-weight:700;text-align:center;margin-bottom:6px}
+.chart-event-item{display:block;width:100%;text-align:left;border:1px solid #e9d5ff;border-left:3px solid #9333ea;border-radius:6px;padding:6px;background:#faf5ff;color:#6b21a8;font:inherit;font-size:12px;line-height:1.5;margin:0 0 5px;cursor:pointer;white-space:pre-wrap;overflow-wrap:anywhere}
+.chart-event-time{display:block;font-size:10px;color:#7e22ce}
+.chart-wrap.native-scroll{touch-action:pan-x pan-y}
+.chart-wrap.native-scroll canvas{cursor:default}
+.calendar{grid-template-columns:repeat(7,minmax(0,1fr))}
+.cal-day{min-width:0}
+.modal-box{overscroll-behavior:contain;overflow-wrap:anywhere;max-height:calc(100dvh - 24px)}
+.muted{color:var(--text-muted);font-size:12px;line-height:1.5}
+@media(max-width:768px){
+ .header{padding:12px max(12px,env(safe-area-inset-right)) 12px max(12px,env(safe-area-inset-left))}
+ .container{margin:12px auto;padding:0 10px max(16px,env(safe-area-inset-bottom))}
+ .card{padding:10px}.toolbar{gap:8px;margin-bottom:14px}
+ .toolbar>.btn{flex:1 1 auto;min-height:44px}
+ .toolbar>.btn:first-child{flex-basis:100%}
+ .toolbar>.asof-control{flex-basis:100%;margin-left:0!important;justify-content:space-between}
+ .toolbar .asof-control input{flex:1;max-width:220px}
+ .btn,.tab{min-height:44px}.tab{padding:8px 12px;font-size:13px}
+ input,select,textarea{font-size:16px;min-height:44px}
+ input[type=checkbox]{min-height:20px;width:20px;height:20px;flex:none}
+ input[type=range]{min-height:28px}
+ .form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .section-title>span{display:block;margin-top:4px;line-height:1.5}
+ .spec-legend-bar{display:block}.spec-range-badge{display:inline-block;margin-top:8px}
+ .sync-controller{flex-wrap:wrap;padding:10px;gap:6px}
+ .sync-controller label{white-space:normal;flex-basis:100%}
+ .sync-controller input{width:100%;flex-basis:100%}
+ #fluidChartWrap{height:240px!important}#medChartWrap{height:330px!important}
+ .table-container{max-height:440px}table{font-size:12px}
+ .sticky-date{white-space:normal;min-width:98px;max-width:110px;overflow-wrap:anywhere}
+ .cal-day{height:86px;padding:3px}.cal-num{font-size:12px}.record{padding:2px;font-size:10px}
+ .modal{padding:8px}.modal-box{padding:14px;max-height:calc(100dvh - 16px)}
+ .med-checkbox-item{min-height:40px;font-size:14px}.med-checkbox-grid{max-height:220px}
+}
+@media(max-width:380px){
+ .title{font-size:16px}#syncBadge{font-size:9px}.toolbar>.btn{padding:8px;font-size:12px}
+ .modal-box div[style*="grid-template-columns:repeat(2"]{grid-template-columns:minmax(0,1fr)!important}
+}
+
 </style>
 </head>
 <body>
@@ -113,19 +174,23 @@ thead tr:nth-child(2) .sticky-date { z-index: 8 !important; background: #f8fafc 
 <button class="btn" onclick="exportData()">💾 백업</button>
 <button class="btn" onclick="document.getElementById('restoreInput').click()">📥 복원</button>
 <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="importData(event)">
-<label class="btn" style="margin-left:auto">기준일 <input id="asOf" type="date" onchange="render()"></label>
+<label class="btn asof-control" style="margin-left:auto">기준일 <input id="asOf" type="date" onchange="render()"></label>
 </div>
 
 <section class="section" style="margin-top:0">
-<div class="section-title">📈 주요 검사 추이 <span class="muted" style="font-size:11px;font-weight:500">← 그래프를 좌우로 드래그하여 이동</span></div>
-<div class="sync-controller"><label>↔️ 한번에 볼 수 있는 기간 조절:</label><input type="range" id="viewRange" min="3" max="30" value="10" oninput="onRangeChange(this.value)"></div>
+<div class="section-title">📈 주요 검사 추이 <span class="muted" style="font-size:11px;font-weight:500">← 좌우로 밀어 보기 · 이전/다음으로 기간 이동</span></div>
+<div class="sync-controller"><label for="viewRange">표시할 기록 날짜 <output id="viewRangeValue" for="viewRange">10개</output></label><input type="range" id="viewRange" min="3" max="30" value="10" oninput="onRangeChange(this.value)"></div>
+<div class="chart-navigation"><button class="btn" id="chartPrevious" onclick="moveChartPeriod(1)">‹ 이전</button><span id="chartPeriod" aria-live="polite"></span><button class="btn" id="chartNext" onclick="moveChartPeriod(-1)">다음 ›</button></div>
 
 <div class="card">
 <div class="spec-legend-bar">
   <div class="tabs" id="metricTabs" style="margin-bottom:0"></div>
   <div class="spec-range-badge" id="specRangeBadge">정상 범위: -</div>
 </div>
-<div class="chart-wrap" id="chartWrap" style="height:230px"><canvas id="chart"></canvas><div class="chart-tooltip" id="chartTooltip"></div></div>
+<div class="chart-scroll" id="labChartScroll" tabindex="0" aria-label="검사 추이 차트, 좌우 스크롤 가능"><div class="chart-content">
+<div id="chartEventLabels" class="chart-event-labels" aria-label="날짜별 증상 및 특이사항"></div>
+<div class="chart-wrap" id="chartWrap" style="height:260px"><canvas id="chart"></canvas><div class="chart-tooltip" id="chartTooltip"></div></div>
+</div></div>
 </div>
 
 <div class="card" style="margin-top:12px">
@@ -134,11 +199,11 @@ thead tr:nth-child(2) .sticky-date { z-index: 8 !important; background: #f8fafc 
   <span><span style="color:#2563eb">■</span> 수액량</span>
   <span><span style="color:#8b5cf6">●</span> 합계</span>
 </div>
-<div class="chart-wrap" id="fluidChartWrap" style="height:200px"><canvas id="fluidChart"></canvas><div class="chart-tooltip" id="fluidChartTooltip"></div></div>
+<div class="chart-scroll" id="fluidChartScroll" tabindex="0" aria-label="차트, 좌우 스크롤 가능"><div class="chart-content"><div class="chart-wrap" id="fluidChartWrap" style="height:200px"><canvas id="fluidChart"></canvas><div class="chart-tooltip" id="fluidChartTooltip"></div></div></div></div>
 </div>
 
 <div class="section-title" style="margin-top:14px">💊 일자별 투약 여부 타임라인 차트</div>
-<div class="card"><div class="chart-wrap" id="medChartWrap" style="height:200px"><canvas id="medicationChart"></canvas><div class="chart-tooltip" id="medChartTooltip"></div></div></div>
+<div class="card"><div class="chart-scroll" id="medChartScroll" tabindex="0" aria-label="차트, 좌우 스크롤 가능"><div class="chart-content"><div class="chart-wrap" id="medChartWrap" style="height:200px"><canvas id="medicationChart"></canvas><div class="chart-tooltip" id="medChartTooltip"></div></div></div></div></div>
 </section>
 
 <section class="section">
@@ -207,7 +272,7 @@ thead tr:nth-child(2) .sticky-date { z-index: 8 !important; background: #f8fafc 
 
 <div class="modal" id="medicalModal" onclick="if(event.target===this)closeModal('medicalModal')"><div class="modal-box">
 <h3 id="medicalModalTitle" style="margin-top:0;font-size:16px">의료기록</h3><p class="muted">검사 일시와 병원/기관을 선택하고 수치를 입력해주세요.</p>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:10px">
 <label style="font-size:11px;font-weight:600">의료기록 일시<br><input id="medicalDate" type="datetime-local" style="width:100%;margin-top:2px"></label>
 <label style="font-size:11px;font-weight:600">병원/기관명<br><select id="hospitalName" style="width:100%;margin-top:2px"><option value="경기동물">경기동물</option><option value="블레스">블레스</option><option value="동탄리더스">동탄리더스</option></select></label>
 </div>
@@ -232,7 +297,7 @@ thead tr:nth-child(2) .sticky-date { z-index: 8 !important; background: #f8fafc 
 </div></div>
 
 <div class="modal" id="eventModal" onclick="if(event.target===this)closeModal('eventModal')"><div class="modal-box">
-<h3 style="margin-top:0;font-size:16px">증상</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px"><input id="eventDate" type="datetime-local"><select id="eventType"><option>증상</option><option>식사</option><option>대소변</option><option>기타</option></select></div>
+<h3 style="margin-top:0;font-size:16px">증상</h3><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:10px"><input id="eventDate" type="datetime-local"><select id="eventType"><option>증상</option><option>식사</option><option>대소변</option><option>기타</option></select></div>
 <p><input id="eventTitle" style="width:100%" placeholder="제목 입력 (예: 구토 1회, 무기력)"></p><p><textarea id="eventMemo" style="width:100%;height:80px" placeholder="상세 내용 입력"></textarea></p><div style="text-align:right"><button class="btn" onclick="closeModal('eventModal')">취소</button> <button class="btn primary" onclick="saveEvent()">저장</button></div>
 </div></div>
 
@@ -249,7 +314,7 @@ thead tr:nth-child(2) .sticky-date { z-index: 8 !important; background: #f8fafc 
   <div style="font-weight:700;font-size:13px;margin-bottom:6px;color:#15803d">✏️ 선택한 [음수/수액/투약] 수정 및 삭제</div>
   <input id="editMedId" type="hidden">
   <p><label>일시<br><input id="editMedDate" type="datetime-local" style="width:100%"></label></p>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+  <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:10px">
     <label>구분<br><select id="editMedType" style="width:100%"><option value="투약">투약</option><option value="수액">수액</option><option value="음수">음수</option></select></label>
     <label>내용/명칭/용량<br><input id="editMedTitle" style="width:100%"></label>
   </div>
@@ -264,7 +329,7 @@ thead tr:nth-child(2) .sticky-date { z-index: 8 !important; background: #f8fafc 
   <div style="font-weight:700;font-size:13px;margin-bottom:6px;color:#6b21a8">✏️ 선택한 [증상] 수정 및 삭제</div>
   <input id="editEventId" type="hidden">
   <p><label>일시<br><input id="editEventDate" type="datetime-local" style="width:100%"></label></p>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+  <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:10px">
     <label>종류<br><select id="editEventType" style="width:100%"><option value="증상">증상</option><option value="식사">식사</option><option value="대소변">대소변</option><option value="기타">기타</option></select></label>
     <label>제목<br><input id="editEventTitle" style="width:100%"></label>
   </div>
@@ -310,7 +375,7 @@ onValue(ref(firebaseDb,'mimi_medical_data'),snapshot=>{
 </script>
 
 <script>
-let metric="K",calDate=new Date(),visibleCount=10,chartStartOffset=0;
+let metric="K",calDate=new Date(),visibleCount=window.matchMedia("(max-width:768px)").matches?5:10,chartStartOffset=0;
 let labChartPoints=[],fluidChartPoints=[],medChartPoints=[];
 const defaultMedList = ["간약", "젠토닐", "에피클", "오메가3", "레날어드밴스드", "아미나바스타", "아조딜", "식욕촉진제(크림)", "카리메트", "로포타", "인트라젠"];
 
@@ -328,7 +393,8 @@ const medShortNames = {
   "인트라젠": "인트라"
 };
 
-document.getElementById("asOf").value=new Date().toISOString().slice(0,10);
+document.getElementById("asOf").value=nowDateISO();
+document.getElementById("viewRange").value=visibleCount;
 function nowDateISO(){const n=new Date();n.setMinutes(n.getMinutes()-n.getTimezoneOffset());return n.toISOString().slice(0,10)}
 function nowDateTimeISO(){const n=new Date();n.setMinutes(n.getMinutes()-n.getTimezoneOffset());return n.toISOString().slice(0,16)}
 function fmt(v){return v==null||v===""?"—":v}
@@ -385,6 +451,56 @@ function getVisibleDates(){
 }
 
 const CANVAS_LEFT_MARGIN = 80;
+const CANVAS_RIGHT_MARGIN = 64;
+function getChartEvents(date){
+  return (window.db.events||[]).filter(e=>e.date && e.date.split("T")[0]===date && !["투약","음수","수액"].includes(e.type)).sort((a,b)=>a.date.localeCompare(b.date));
+}
+function prepareChartLayout(dates){
+  const scrolls=[...document.querySelectorAll(".chart-scroll")];
+  const minWidth=CANVAS_LEFT_MARGIN+CANVAS_RIGHT_MARGIN+Math.max(1,dates.length-1)*72;
+  const width=Math.max(scrolls[0].clientWidth,minWidth);
+  scrolls.forEach(el=>{
+    el.firstElementChild.style.width=width+"px";
+    el.querySelector(".chart-wrap").classList.toggle("native-scroll",width>el.clientWidth);
+  });
+  document.getElementById("viewRangeValue").textContent=visibleCount+"개";
+  document.getElementById("chartPeriod").textContent=dates.length?`${dates[0]} ~ ${dates[dates.length-1]}`:"기록 없음";
+  document.getElementById("chartPrevious").disabled=chartStartOffset>=Math.max(0,getAllDatesSorted().length-visibleCount);
+  document.getElementById("chartNext").disabled=chartStartOffset===0;
+  renderEventAnnotations(dates,width);
+}
+function renderEventAnnotations(dates,width){
+  const layer=document.getElementById("chartEventLabels");
+  layer.replaceChildren();
+  const groups=dates.map(getChartEvents);
+  if(!groups.some(g=>g.length))return;
+  const iw=width-CANVAS_LEFT_MARGIN-CANVAS_RIGHT_MARGIN;
+  const columnWidth=dates.length===1?Math.min(280,iw):Math.min(110,iw/(dates.length-1)-8);
+  layer.style.paddingLeft=(dates.length===1?CANVAS_LEFT_MARGIN:CANVAS_LEFT_MARGIN-columnWidth/2)+"px";
+  layer.style.paddingRight=(dates.length===1?CANVAS_RIGHT_MARGIN:CANVAS_RIGHT_MARGIN-columnWidth/2)+"px";
+  layer.style.justifyContent=dates.length===1?"center":"space-between";
+  dates.forEach((date,i)=>{
+    const col=document.createElement("div");col.className="chart-event-column";col.style.width=columnWidth+"px";
+    if(groups[i].length){
+      const heading=document.createElement("div");heading.className="chart-event-date";
+      heading.textContent=`${date.slice(5).replace("-","/")} · ${groups[i].length}건`;col.append(heading);
+      groups[i].forEach(event=>{
+        const button=document.createElement("button");button.type="button";button.className="chart-event-item";
+        button.title=event.memo||"눌러서 날짜 상세 보기";
+        if(event.date.includes("T")){
+          const time=document.createElement("span");time.className="chart-event-time";time.textContent=event.date.split("T")[1];button.append(time);
+        }
+        button.append(document.createTextNode(event.title||"증상"));
+        button.addEventListener("click",()=>openDayEvents(date));col.append(button);
+      });
+    }
+    layer.append(col);
+  });
+}
+function moveChartPeriod(direction){
+  const max=Math.max(0,getAllDatesSorted().length-visibleCount);
+  chartStartOffset=Math.max(0,Math.min(max,chartStartOffset+direction*visibleCount));renderAllCharts();
+}
 function getXPos(L, iw, len, idx) {
   if (len <= 1) return L + iw / 2;
   return L + (iw / (len - 1)) * idx;
@@ -407,35 +523,11 @@ function renderTabs(){
 }
 
 function drawEventLinesAndLabels(ctx,dates,L,iw,T,ih){
-  const events=window.db.events||[];
-
   dates.forEach((d,i)=>{
-    let x=getXPos(L, iw, dates.length, i);
-    let es=events.filter(e=>e.date.startsWith(d) && e.type!=="투약" && e.type!=="음수" && e.type!=="수액");
-    if(es.length){
-      ctx.save();
-      ctx.strokeStyle="#9333ea";
-      ctx.lineWidth=1;
-      ctx.setLineDash([2,2]);
-      ctx.beginPath();
-      ctx.moveTo(x,T);
-      ctx.lineTo(x,T+ih);
-      ctx.stroke();
-      ctx.restore();
-
-      ctx.save();
-      ctx.font="bold 9px sans-serif";
-      ctx.fillStyle="#6b21a8";
-      ctx.textAlign="center";
-
-      es.forEach((e, idx) => {
-        let t = e.title || "증상";
-        if(t.length > 6) t = t.slice(0,6) + "..";
-        let textY = T - 4 - (es.length - 1 - idx) * 11;
-        ctx.fillText(t, x, textY);
-      });
-      ctx.restore();
-    }
+    if(!getChartEvents(d).length)return;
+    const x=getXPos(L,iw,dates.length,i);
+    ctx.save();ctx.strokeStyle="#9333ea";ctx.lineWidth=1;ctx.setLineDash([3,3]);
+    ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,T+ih);ctx.stroke();ctx.restore();
   });
 }
 
@@ -443,7 +535,7 @@ function renderLabChart(){
   const c=document.getElementById("chart"),ctx=c.getContext("2d"),dpr=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;
   c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
   labChartPoints=[];document.getElementById("chartTooltip").style.display="none";
-  const dates=getVisibleDates(),labs=sortedLabs(),L=CANVAS_LEFT_MARGIN,R=20,T=25,B=35,iw=w-L-R,ih=h-T-B;
+  const dates=getVisibleDates(),labs=sortedLabs(),L=CANVAS_LEFT_MARGIN,R=CANVAS_RIGHT_MARGIN,T=25,B=35,iw=w-L-R,ih=h-T-B;
   if(!dates.length)return;
 
   const mi=allMetrics.find(x=>x[0]===metric)||[metric,metric,"","#2563eb",0,10];
@@ -543,7 +635,7 @@ function renderFluidChart(){
   c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
   fluidChartPoints=[];const dates=getVisibleDates();if(!dates.length)return;
   
-  const L=CANVAS_LEFT_MARGIN,R=20,T=20,B=30,iw=w-L-R,ih=h-T-B;
+  const L=CANVAS_LEFT_MARGIN,R=CANVAS_RIGHT_MARGIN,T=20,B=30,iw=w-L-R,ih=h-T-B;
   const fd=dates.map(d=>{
     let ev=(window.db.events||[]).filter(e=>e.date.startsWith(d)),drink=0,fluid=0;
     ev.forEach(e=>{
@@ -642,7 +734,7 @@ function renderMedicationChart(){
   });
 
   const meds = activeMeds.length > 0 ? activeMeds : defaultMedList;
-  const L=CANVAS_LEFT_MARGIN,R=20,T=15,B=25,iw=w-L-R,ih=h-T-B;
+  const L=CANVAS_LEFT_MARGIN,R=CANVAS_RIGHT_MARGIN,T=15,B=25,iw=w-L-R,ih=h-T-B;
   const rowHeight = ih / meds.length;
 
   meds.forEach((m, idx)=>{
@@ -701,14 +793,14 @@ function renderMedicationChart(){
   });
 }
 
-function renderAllCharts(){renderTabs();renderLabChart();renderFluidChart();renderMedicationChart()}
-function setupTooltip(wid,tid,getP,content){const wrap=document.getElementById(wid),tip=document.getElementById(tid);if(!wrap||!tip)return;const h=e=>{const ps=getP();if(!ps.length)return;const r=wrap.getBoundingClientRect(),cx=e.touches?e.touches[0].clientX:e.clientX,x=cx-r.left;let f=null,md=30;ps.forEach(p=>{let d=Math.abs(x-p.x);if(d<md){md=d;f=p}});if(f){tip.innerHTML=content(f);tip.style.display="block";let l=f.x+10;if(l+200>r.width)l=f.x-210;tip.style.left=l+"px";tip.style.top="20px"}else tip.style.display="none"};wrap.addEventListener("mousemove",h);wrap.addEventListener("mouseleave",()=>tip.style.display="none");wrap.addEventListener("touchstart",h,{passive:true});wrap.addEventListener("touchmove",h,{passive:true})}
+function renderAllCharts(){renderTabs();prepareChartLayout(getVisibleDates());renderLabChart();renderFluidChart();renderMedicationChart()}
+function setupTooltip(wid,tid,getP,content){const wrap=document.getElementById(wid),tip=document.getElementById(tid);if(!wrap||!tip)return;const h=e=>{const ps=getP();if(!ps.length)return;const r=wrap.getBoundingClientRect(),cx=e.touches?e.touches[0].clientX:e.clientX,x=cx-r.left;let f=null,md=30;ps.forEach(p=>{let d=Math.abs(x-p.x);if(d<md){md=d;f=p}});if(f){tip.innerHTML=content(f);tip.style.display="block";const scroller=wrap.closest(".chart-scroll"),left=scroller?scroller.scrollLeft:0,visibleWidth=scroller?scroller.clientWidth:r.width;let l=Math.max(left+4,Math.min(f.x+10,left+visibleWidth-224));tip.style.left=l+"px";tip.style.top="20px"}else tip.style.display="none"};wrap.addEventListener("mousemove",h);wrap.addEventListener("mouseleave",()=>tip.style.display="none");wrap.addEventListener("touchstart",h,{passive:true});wrap.addEventListener("touchmove",h,{passive:true})}
 
 setupTooltip("chartWrap","chartTooltip",()=>labChartPoints,p=>`<b>${p.date.replace("T"," ")}</b><br>${metric}: <b>${p.value}</b><br><span style="font-size:10px;color:#94a3b8">(정상: ${p.refMin}~${p.refMax})</span>`);
 setupTooltip("fluidChartWrap","fluidChartTooltip",()=>fluidChartPoints,p=>`<b>${p.date}</b><br>💧 음수량: <b>${p.drink} ml</b><br>💉 수액량: <b>${p.fluid} ml</b><br>📊 <b>합계: ${p.total} ml</b>`);
 setupTooltip("medChartWrap","medChartTooltip",()=>medChartPoints,p=>`<b>${p.date}</b><br>💊 약품: <b>${p.medName}</b><br>상세: ${p.details}`);
 
-function setupChartDrag(){const wrap=document.getElementById("chartWrap"),canvas=document.getElementById("chart");let sx=null,drag=false;canvas.addEventListener("pointerdown",e=>{sx=e.clientX;drag=false;canvas.setPointerCapture(e.pointerId);canvas.classList.add("dragging")});canvas.addEventListener("pointermove",e=>{if(sx===null)return;const dx=e.clientX-sx;if(Math.abs(dx)>25){drag=true;const all=getAllDatesSorted(),max=Math.max(0,all.length-visibleCount);if(dx>0)chartStartOffset=Math.min(max,chartStartOffset+1);else chartStartOffset=Math.max(0,chartStartOffset-1);sx=e.clientX;renderAllCharts()}});const end=()=>{sx=null;canvas.classList.remove("dragging")};canvas.addEventListener("pointerup",end);canvas.addEventListener("pointercancel",end)}
+function setupChartDrag(){const wrap=document.getElementById("chartWrap"),canvas=document.getElementById("chart");let sx=null,drag=false;canvas.addEventListener("pointerdown",e=>{if(wrap.classList.contains("native-scroll"))return;sx=e.clientX;drag=false;canvas.setPointerCapture(e.pointerId);canvas.classList.add("dragging")});canvas.addEventListener("pointermove",e=>{if(sx===null)return;const dx=e.clientX-sx;if(Math.abs(dx)>25){drag=true;const all=getAllDatesSorted(),max=Math.max(0,all.length-visibleCount);if(dx>0)chartStartOffset=Math.min(max,chartStartOffset+1);else chartStartOffset=Math.max(0,chartStartOffset-1);sx=e.clientX;renderAllCharts()}});const end=()=>{sx=null;canvas.classList.remove("dragging")};canvas.addEventListener("pointerup",end);canvas.addEventListener("pointercancel",end)}
 
 function renderTable(){
   const ds=[...new Set([...(window.db.labs||[]).map(x=>x.date),...(window.db.events||[]).map(x=>x.date)])].sort().reverse();
@@ -995,6 +1087,11 @@ function importData(e){const f=e.target.files[0];if(!f)return;const r=new FileRe
 function render(){renderAllCharts();renderTable();renderCalendar()}
 window.render=render;
 setupChartDrag();
+const chartScrolls=[...document.querySelectorAll(".chart-scroll")];
+chartScrolls.forEach(source=>source.addEventListener("scroll",()=>{
+  chartScrolls.forEach(target=>{if(target!==source && Math.abs(target.scrollLeft-source.scrollLeft)>1)target.scrollLeft=source.scrollLeft;});
+  document.querySelectorAll(".chart-tooltip").forEach(t=>t.style.display="none");
+},{passive:true}));
 window.addEventListener("resize",renderAllCharts);
 </script>
 </body>
