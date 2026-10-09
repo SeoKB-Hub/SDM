@@ -114,7 +114,7 @@ textarea{resize:vertical}
 .spec-range-badge{flex:0 0 auto;white-space:normal}
 .sync-controller input[type=range]{min-width:60px;padding:0}
 .sync-controller output{color:var(--primary);margin-left:6px}
-.chart-navigation{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.chart-navigation{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px}
 .chart-navigation span{font-size:12px;color:var(--text-muted);text-align:center}
 .btn:disabled{opacity:.45;cursor:default}
 .chart-scroll{width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
@@ -250,7 +250,7 @@ textarea{resize:vertical}
 
 <section class="section" style="margin-top:0">
 <div class="section-title">검사 추이 <span class="muted" style="font-size:11px;font-weight:500">한 손가락: 날짜 이동 · 두 손가락: 기간 확대·축소</span></div>
-<div class="chart-navigation"><button class="btn" id="chartPrevious" onclick="moveChartPeriod(1)">‹ 이전</button><span><span id="chartPeriod" aria-live="polite"></span> · <span id="viewRangeValue">30개</span></span><button class="btn" id="chartNext" onclick="moveChartPeriod(-1)">다음 ›</button></div>
+<div class="chart-navigation"><span><span id="chartPeriod" aria-live="polite"></span> · <span id="viewRangeValue">30개</span></span></div>
 
 <div class="card lab-card">
 <div class="metric-picker"><label for="mobileMetric">검사 항목</label><select id="mobileMetric" onchange="selectMetric(this.value)"></select></div>
@@ -537,8 +537,6 @@ function prepareChartLayout(dates){
   document.getElementById("viewRangeValue").textContent=visibleCount+"개";
     const short=d=>d.slice(5).replace("-","/");
   document.getElementById("chartPeriod").textContent=dates.length?`${short(dates[0])} – ${short(dates[dates.length-1])}`:"기록 없음";
-  document.getElementById("chartPrevious").disabled=chartStartOffset>=Math.max(0,getAllDatesSorted().length-visibleCount);
-  document.getElementById("chartNext").disabled=chartStartOffset===0;
   renderEventAnnotations(dates);
 }
 function renderEventAnnotations(dates){
@@ -567,10 +565,6 @@ ${events.length}건`;col.append(heading);
 function shouldLabelDate(i,length){
   const limit=window.matchMedia("(max-width:768px)").matches?5:12;
   return i===0||i===length-1||i%Math.max(1,Math.ceil((length-1)/(limit-1)))===0;
-}
-function moveChartPeriod(direction){
-  const max=Math.max(0,getAllDatesSorted().length-visibleCount);
-  chartStartOffset=Math.max(0,Math.min(max,chartStartOffset+direction*visibleCount));renderAllCharts();
 }
 function getXPos(L, iw, len, idx) {
   if (len <= 1) return L + iw / 2;
