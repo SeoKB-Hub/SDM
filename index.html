@@ -220,6 +220,18 @@ textarea{resize:vertical}
  .fold-section>summary{padding:14px;font-size:13px}.chart-wrap canvas{cursor:default}
 }
 
+
+[hidden]{display:none!important}
+.chart-wrap canvas{touch-action:none}
+.combined-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.combined-summary>div{min-width:0;padding:8px;background:#f8fafc;border-radius:8px}
+.combined-summary strong{display:block;font-size:22px;line-height:1.3}
+.combined-summary span,.combined-summary small{font-size:11px;display:block;overflow-wrap:anywhere}
+.combined-summary small{color:#64748b;margin-top:3px}
+.combined-legend{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.combined-legend button{background:#fff;border:1px solid var(--border);border-radius:8px;padding:8px;font-size:12px;min-height:40px;cursor:pointer}
+.combined-legend button[aria-pressed="false"]{opacity:.45;text-decoration:line-through}
+@media(max-width:768px){.combined-summary{gap:4px}.combined-summary>div{padding:7px 5px}.combined-summary strong{font-size:20px}.combined-summary small{font-size:10px}}
 </style>
 </head>
 <body>
@@ -239,18 +251,20 @@ textarea{resize:vertical}
 </div></details>
 
 <section class="section" style="margin-top:0">
-<div class="section-title">검사 추이 <span class="muted" style="font-size:11px;font-weight:500">점을 누르면 수치 · 보라색 표시에는 이벤트</span></div>
-<div class="sync-controller"><label for="viewRange">기록 날짜 <output id="viewRangeValue" for="viewRange">10개</output></label><input type="range" id="viewRange" min="3" max="30" value="10" oninput="onRangeChange(this.value)"></div>
+<div class="section-title">검사 추이 <span class="muted" style="font-size:11px;font-weight:500">한 손가락: 날짜 이동 · 두 손가락: 기간 확대·축소</span></div>
+<div class="sync-controller"><label for="viewRange">기록 날짜 <output id="viewRangeValue" for="viewRange">30개</output></label><input type="range" id="viewRange" min="3" max="30" value="30" oninput="onRangeChange(this.value)"></div>
 <div class="chart-navigation"><button class="btn" id="chartPrevious" onclick="moveChartPeriod(1)">‹ 이전</button><span id="chartPeriod" aria-live="polite"></span><button class="btn" id="chartNext" onclick="moveChartPeriod(-1)">다음 ›</button></div>
 
 <div class="card lab-card">
 <div class="metric-picker"><label for="mobileMetric">검사 항목</label><select id="mobileMetric" onchange="selectMetric(this.value)"></select></div>
 <div class="metric-latest"><div><span id="metricName"></span><strong id="metricValue">—</strong><span id="metricUnit"></span></div><span id="metricDate" class="muted"></span></div>
+<div id="combinedSummary" class="combined-summary"></div>
+<div id="combinedLegend" class="combined-legend" aria-label="통합 그래프 항목 표시"></div>
 <div class="spec-legend-bar">
   <div class="tabs" id="metricTabs" style="margin-bottom:0"></div>
   <div class="spec-range-badge" id="specRangeBadge">정상 범위: -</div>
 </div>
-<div class="chart-scroll" id="labChartScroll" tabindex="0" aria-label="검사 추이 차트, 좌우 스크롤 가능"><div class="chart-content">
+<div class="chart-scroll" id="labChartScroll" tabindex="0" aria-label="검사 추이 차트, 한 손가락 날짜 이동, 두 손가락 기간 확대 축소"><div class="chart-content">
 <div class="chart-wrap" id="chartWrap" style="height:240px"><canvas id="chart"></canvas><div class="chart-tooltip" id="chartTooltip"></div></div>
 </div></div>
 <details class="event-panel" id="chartEventPanel" open><summary>기간 내 이벤트 <span id="chartEventCount">0건</span></summary><div id="chartEventLabels" class="chart-event-labels" aria-label="날짜별 증상 및 특이사항"></div></details>
@@ -262,11 +276,11 @@ textarea{resize:vertical}
   <span><span style="color:#2563eb">■</span> 수액량</span>
   <span><span style="color:#8b5cf6">●</span> 합계</span>
 </div>
-<div class="chart-scroll" id="fluidChartScroll" tabindex="0" aria-label="차트, 좌우 스크롤 가능"><div class="chart-content"><div class="chart-wrap" id="fluidChartWrap" style="height:200px"><canvas id="fluidChart"></canvas><div class="chart-tooltip" id="fluidChartTooltip"></div></div></div></div>
+<div class="chart-scroll" id="fluidChartScroll" tabindex="0" aria-label="차트, 한 손가락 날짜 이동, 두 손가락 기간 확대 축소"><div class="chart-content"><div class="chart-wrap" id="fluidChartWrap" style="height:200px"><canvas id="fluidChart"></canvas><div class="chart-tooltip" id="fluidChartTooltip"></div></div></div></div>
 </div>
 
 <details class="section fold-section" id="medicationDetails"><summary>💊 투약 기록 보기</summary>
-<div class="card"><div class="chart-scroll" id="medChartScroll" tabindex="0" aria-label="차트, 좌우 스크롤 가능"><div class="chart-content"><div class="chart-wrap" id="medChartWrap" style="height:200px"><canvas id="medicationChart"></canvas><div class="chart-tooltip" id="medChartTooltip"></div></div></div></div></div>
+<div class="card"><div class="chart-scroll" id="medChartScroll" tabindex="0" aria-label="차트, 한 손가락 날짜 이동, 두 손가락 기간 확대 축소"><div class="chart-content"><div class="chart-wrap" id="medChartWrap" style="height:200px"><canvas id="medicationChart"></canvas><div class="chart-tooltip" id="medChartTooltip"></div></div></div></div></div>
 </details></section>
 
 <details class="section fold-section" id="tableDetails"><summary>🧪 전체 검사·증상 기록</summary>
@@ -437,7 +451,9 @@ onValue(ref(firebaseDb,'mimi_medical_data'),snapshot=>{
 </script>
 
 <script>
-let metric="K",calDate=new Date(),visibleCount=window.matchMedia("(max-width:768px)").matches?5:10,chartStartOffset=0;
+let metric="combined",calDate=new Date(),visibleCount=30,chartStartOffset=0;
+const combinedKeys=["K","Phos","Cr","BUN"];
+const hiddenCombinedMetrics=new Set();
 let labChartPoints=[],fluidChartPoints=[],medChartPoints=[];
 const defaultMedList = ["간약", "젠토닐", "에피클", "오메가3", "레날어드밴스드", "아미나바스타", "아조딜", "식욕촉진제(크림)", "카리메트", "로포타", "인트라젠"];
 
@@ -526,6 +542,8 @@ function prepareChartLayout(dates){
     el.querySelector(".chart-wrap").classList.remove("native-scroll");
   });
   document.getElementById("viewRangeValue").textContent=visibleCount+"개";
+  document.getElementById("viewRange").max=Math.max(30,getAllDatesSorted().length);
+  document.getElementById("viewRange").value=visibleCount;
   const short=d=>d.slice(5).replace("-","/");
   document.getElementById("chartPeriod").textContent=dates.length?`${short(dates[0])} – ${short(dates[dates.length-1])}`:"기록 없음";
   document.getElementById("chartPrevious").disabled=chartStartOffset>=Math.max(0,getAllDatesSorted().length-visibleCount);
@@ -568,12 +586,13 @@ function getXPos(L, iw, len, idx) {
   return L + (iw / (len - 1)) * idx;
 }
 
-function onRangeChange(v){visibleCount=Number(v);chartStartOffset=0;renderAllCharts()}
+function onRangeChange(v){visibleCount=Math.max(3,Math.round(Number(v)||30));renderAllCharts()}
 function selectMetric(m){metric=m;renderAllCharts()}
 
 function renderTabs(){
   const picker=document.getElementById("mobileMetric");
-  if(!picker.options.length)allMetrics.forEach(m=>{const o=document.createElement("option");o.value=m[0];o.textContent=m[1];picker.append(o);});
+  const choices=[["combined","K · 인 · Cr · BUN 통합"],...allMetrics];
+  if(!picker.options.length)choices.forEach(m=>{const o=document.createElement("option");o.value=m[0];o.textContent=m[1];picker.append(o);});
   picker.value=metric;
   const info=allMetrics.find(m=>m[0]===metric);
   const latest=[...sortedLabs()].reverse().find(l=>l[metric]!=null && l[metric]!=="");
@@ -581,8 +600,21 @@ function renderTabs(){
   document.getElementById("metricValue").textContent=latest?latest[metric]:"—";
   document.getElementById("metricUnit").textContent=info?info[2]:"";
   document.getElementById("metricDate").textContent=latest?"최근 검사 "+latest.date.split("T")[0].replaceAll("-","."):"검사 기록 없음";
-  document.getElementById("metricTabs").innerHTML=allMetrics.map(x=>`<button class="tab ${metric===x[0]?"active":""}" onclick="selectMetric('${x[0]}')">${x[0]==="AnGap"?"AnGap(+)":x[0]}</button>`).join("");
+  document.getElementById("metricTabs").innerHTML=choices.map(x=>`<button class="tab ${metric===x[0]?"active":""}" onclick="selectMetric('${x[0]}')">${x[0]==="combined"?"통합":x[0]==="AnGap"?"AnGap(+)":x[0]}</button>`).join("");
   
+  const combined=metric==="combined";
+  document.querySelector(".metric-latest").hidden=combined;
+  document.getElementById("combinedSummary").hidden=!combined;
+  document.getElementById("combinedLegend").hidden=!combined;
+  if(combined){
+    const labs=[...sortedLabs()].reverse();
+    document.getElementById("combinedSummary").innerHTML=combinedKeys.map(key=>{
+      const info=allMetrics.find(m=>m[0]===key),latest=labs.find(l=>validLabValue(l[key]));
+      return `<div><span style="color:${combinedColor(key)}">${combinedName(key)}</span><strong>${latest?Number(latest[key]):"—"}</strong><span>${info[2]}</span><small>${latest?latest.date.slice(5,10).replace("-","/"):"기록 없음"}</small></div>`;
+    }).join("");
+    document.getElementById("combinedLegend").innerHTML=combinedKeys.map(key=>`<button type="button" style="color:${combinedColor(key)}" aria-pressed="${!hiddenCombinedMetrics.has(key)}" onclick="toggleCombinedMetric('${key}')">● ${combinedName(key)}</button>`).join("");
+    document.getElementById("specRangeBadge").textContent="왼쪽: K(mmol/L) · 인/Cr(mg/dL) | 오른쪽: BUN(mg/dL)";
+  }
   const currentMetricInfo = allMetrics.find(x => x[0] === metric);
   if(currentMetricInfo) {
     const name = currentMetricInfo[1];
@@ -602,7 +634,50 @@ function drawEventLinesAndLabels(ctx,dates,L,iw,T,ih){
   });
 }
 
+function validLabValue(v){return v!==null && v!==undefined && v!=="" && Number.isFinite(Number(v));}
+function combinedName(key){return {K:"칼륨 K",Phos:"인 P",Cr:"크레아 Cr",BUN:"BUN"}[key];}
+function combinedColor(key){return {K:"#2563eb",Phos:"#7c3aed",Cr:"#dc2626",BUN:"#d97706"}[key];}
+function toggleCombinedMetric(key){if(hiddenCombinedMetrics.has(key))hiddenCombinedMetrics.delete(key);else hiddenCombinedMetrics.add(key);renderAllCharts();}
+function renderCombinedLabChart(){
+  const c=document.getElementById("chart"),ctx=c.getContext("2d"),dpr=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;
+  c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
+  labChartPoints=[];document.getElementById("chartTooltip").style.display="none";
+  const dates=getVisibleDates(),labs=sortedLabs().filter(l=>dates.includes(l.date.slice(0,10)));
+  if(!dates.length || w<100 || h<70)return;
+  const L=CANVAS_LEFT_MARGIN,R=Math.max(48,CANVAS_RIGHT_MARGIN),T=25,B=35,iw=w-L-R,ih=h-T-B;
+  const shown=combinedKeys.filter(k=>!hiddenCombinedMetrics.has(k));
+  const upper=keys=>{
+    const values=labs.flatMap(l=>keys.filter(k=>validLabValue(l[k])).map(k=>Number(l[k])));
+    const top=Math.max(1,...values)*1.15,step=top>50?10:top>10?5:1;
+    return Math.ceil(top/step)*step;
+  };
+  const leftMax=upper(shown.filter(k=>k!=="BUN")),rightMax=upper(shown.filter(k=>k==="BUN"));
+  ctx.font="10px sans-serif";ctx.textAlign="left";ctx.fillStyle="#64748b";ctx.fillText("K / P / Cr",L,12);
+  ctx.textAlign="right";ctx.fillStyle=combinedColor("BUN");ctx.fillText("BUN",w-R,12);
+  for(let i=0;i<=4;i++){
+    const y=T+ih*i/4;ctx.strokeStyle="#e2e8f0";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(w-R,y);ctx.stroke();
+    ctx.fillStyle="#64748b";ctx.textAlign="right";ctx.fillText((leftMax*(1-i/4)).toFixed(1),L-7,y+3);
+    ctx.fillStyle=combinedColor("BUN");ctx.textAlign="left";ctx.fillText((rightMax*(1-i/4)).toFixed(0),w-R+7,y+3);
+  }
+  drawEventLinesAndLabels(ctx,dates,L,iw,T,ih);
+  // Each timestamp remains a point, including multiple tests on the same day.
+  const xFor=l=>{
+    const day=l.date.slice(0,10),i=dates.indexOf(day),same=labs.filter(a=>a.date.slice(0,10)===day);
+    const rank=same.indexOf(l),ratio=same.length>1?rank/(same.length-1):.5;
+    if(dates.length===1)return L+iw*(same.length>1?.2+ratio*.6:.5);
+    const fraction=same.length>1?(i===0?ratio*.65:i===dates.length-1?(ratio-1)*.65:(ratio-.5)*.65):0;
+    return Math.max(L,Math.min(w-R,getXPos(L,iw,dates.length,i+fraction)));
+  };
+  shown.forEach(key=>{
+    const pts=labs.filter(l=>validLabValue(l[key])).map(l=>({x:xFor(l),y:T+ih*(1-Number(l[key])/(key==="BUN"?rightMax:leftMax)),date:l.date,record:l,key}));
+    ctx.strokeStyle=combinedColor(key);ctx.lineWidth=2;ctx.setLineDash(key==="BUN"?[5,3]:[]);ctx.beginPath();
+    pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();ctx.setLineDash([]);
+    pts.forEach(p=>{ctx.fillStyle=combinedColor(key);ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);ctx.fill();labChartPoints.push(p);});
+  });
+  dates.forEach((d,i)=>{if(!shouldLabelDate(i,dates.length))return;ctx.fillStyle="#64748b";ctx.textAlign="center";ctx.fillText(d.slice(5).replace("-","/"),getXPos(L,iw,dates.length,i),h-10);});
+}
 function renderLabChart(){
+  if(metric==="combined"){renderCombinedLabChart();return;}
   const c=document.getElementById("chart"),ctx=c.getContext("2d"),dpr=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;
   c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
   labChartPoints=[];document.getElementById("chartTooltip").style.display="none";
@@ -727,7 +802,7 @@ function renderFluidChart(){
     ctx.fillText((maxVal-maxVal*i/3).toFixed(0)+' ml',5,y+3);
   }
 
-  const barWidth = Math.min(20, Math.max(6, iw / dates.length * 0.35));
+  const barWidth = Math.min(20, Math.max(1.5, iw / dates.length * 0.6));
 
   fd.forEach((d, i)=>{
     let x = getXPos(L, iw, dates.length, i);
@@ -866,13 +941,70 @@ function renderMedicationChart(){
 }
 
 function renderAllCharts(){renderTabs();prepareChartLayout(getVisibleDates());renderLabChart();renderFluidChart();renderMedicationChart()}
-function setupTooltip(wid,tid,getP,content){const wrap=document.getElementById(wid),tip=document.getElementById(tid);if(!wrap||!tip)return;const h=e=>{const ps=getP();if(!ps.length)return;const r=wrap.getBoundingClientRect(),cx=e.touches?e.touches[0].clientX:e.clientX,x=cx-r.left;let f=null,md=30;ps.forEach(p=>{let d=Math.abs(x-p.x);if(d<md){md=d;f=p}});if(f){tip.innerHTML=content(f);tip.style.display="block";const scroller=wrap.closest(".chart-scroll"),left=scroller?scroller.scrollLeft:0,visibleWidth=scroller?scroller.clientWidth:r.width;let l=Math.max(left+4,Math.min(f.x+10,left+visibleWidth-224));tip.style.left=l+"px";tip.style.top="20px"}else tip.style.display="none"};wrap.addEventListener("mousemove",h);wrap.addEventListener("mouseleave",()=>tip.style.display="none");wrap.addEventListener("touchstart",h,{passive:true});wrap.addEventListener("touchmove",h,{passive:true})}
-
-setupTooltip("chartWrap","chartTooltip",()=>labChartPoints,p=>`<b>${p.date.replace("T"," ")}</b><br>${metric}: <b>${p.value}</b><br><span style="font-size:10px;color:#94a3b8">(정상: ${p.refMin}~${p.refMax})</span>`);
+function setupTooltip(wid,tid,getP,content){
+  const wrap=document.getElementById(wid),tip=document.getElementById(tid);if(!wrap||!tip)return;
+  const show=e=>{
+    if(wrap._chartGesturing || (e.touches && e.touches.length>1)){tip.style.display="none";return;}
+    const ps=getP();if(!ps.length)return;
+    const r=wrap.getBoundingClientRect(),pt=e.touches?e.touches[0]:e,x=pt.clientX-r.left,y=pt.clientY-r.top;
+    let found=null,nearest=32;
+    ps.forEach(p=>{const dx=Math.abs(x-p.x);if(dx>32)return;const distance=p.y==null?dx:Math.hypot(dx,y-p.y);if(distance<nearest){nearest=distance;found=p;}});
+    if(!found){tip.style.display="none";return;}
+    tip.innerHTML=content(found);tip.style.display="block";
+    tip.style.left=Math.max(4,Math.min(found.x+10,r.width-224))+"px";tip.style.top="20px";
+  };
+  wrap.addEventListener("pointermove",e=>{if(e.pointerType==="mouse" && !e.buttons)show(e);});
+  wrap.addEventListener("pointerup",show);
+  wrap.addEventListener("pointerleave",()=>tip.style.display="none");
+}
+function labTooltip(p){
+  if(metric!=="combined")return `<b>${p.date.replace("T"," ")}</b><br>${metric}: <b>${p.value}</b><br><span style="font-size:10px;color:#94a3b8">(정상: ${p.refMin}~${p.refMax})</span>`;
+  return `<b>${p.date.replace("T"," ")}</b>`+combinedKeys.map(key=>{
+    const info=allMetrics.find(m=>m[0]===key),value=p.record[key];
+    return `<br><span style="color:${combinedColor(key)}">●</span> ${combinedName(key)}: <b>${validLabValue(value)?Number(value):"—"}</b> ${info[2]}`;
+  }).join("");
+}
+setupTooltip("chartWrap","chartTooltip",()=>labChartPoints,labTooltip);
 setupTooltip("fluidChartWrap","fluidChartTooltip",()=>fluidChartPoints,p=>`<b>${p.date}</b><br>💧 음수량: <b>${p.drink} ml</b><br>💉 수액량: <b>${p.fluid} ml</b><br>📊 <b>합계: ${p.total} ml</b>`);
 setupTooltip("medChartWrap","medChartTooltip",()=>medChartPoints,p=>`<b>${p.date}</b><br>💊 약품: <b>${p.medName}</b><br>상세: ${p.details}`);
 
-function setupChartDrag(){const wrap=document.getElementById("chartWrap"),canvas=document.getElementById("chart");let sx=null,drag=false;canvas.addEventListener("pointerdown",e=>{if(wrap.classList.contains("native-scroll"))return;sx=e.clientX;drag=false;canvas.setPointerCapture(e.pointerId);canvas.classList.add("dragging")});canvas.addEventListener("pointermove",e=>{if(sx===null)return;const dx=e.clientX-sx;if(Math.abs(dx)>25){drag=true;const all=getAllDatesSorted(),max=Math.max(0,all.length-visibleCount);if(dx>0)chartStartOffset=Math.min(max,chartStartOffset+1);else chartStartOffset=Math.max(0,chartStartOffset-1);sx=e.clientX;renderAllCharts()}});const end=()=>{sx=null;canvas.classList.remove("dragging")};canvas.addEventListener("pointerup",end);canvas.addEventListener("pointercancel",end)}
+// A shared index window drives every chart; gesture anchors stay under the fingers.
+function calculateGestureWindow(base,current,total){
+  const limit=Math.max(30,total),count=Math.max(3,Math.min(limit,Math.round(base.count*(base.distance && current.distance?base.distance/current.distance:1))));
+  const fraction=x=>Math.max(0,Math.min(1,(x-base.left)/Math.max(1,base.width)));
+  const anchor=base.start+fraction(base.center)*(base.count-1);
+  const start=Math.max(0,Math.min(Math.max(0,total-count),Math.round(anchor-fraction(current.center)*(count-1))));
+  return {count,offset:Math.max(0,total-count)-start};
+}
+function setupChartDrag(){
+  ["chartWrap","fluidChartWrap","medChartWrap"].forEach(wid=>{
+    const wrap=document.getElementById(wid),canvas=wrap.querySelector("canvas"),pointers=new Map();let base=null;
+    const geometry=()=>{
+      const p=[...pointers.values()],center=p.reduce((sum,v)=>sum+v.x,0)/p.length;
+      return {center,distance:p.length>=2?Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y):0};
+    };
+    const resetBase=()=>{
+      getVisibleDates();const r=canvas.getBoundingClientRect(),left=wid==="medChartWrap"?Math.max(68,CANVAS_LEFT_MARGIN):CANVAS_LEFT_MARGIN,right=wid==="chartWrap" && metric==="combined"?Math.max(48,CANVAS_RIGHT_MARGIN):CANVAS_RIGHT_MARGIN;
+      base={...geometry(),count:visibleCount,start:Math.max(0,getAllDatesSorted().length-visibleCount)-chartStartOffset,left:r.left+left,width:r.width-left-right};
+    };
+    canvas.addEventListener("pointerdown",e=>{
+      if(e.pointerType==="mouse" && e.button!==0)return;
+      if(!pointers.size)wrap._chartGesturing=false;
+      pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});canvas.setPointerCapture(e.pointerId);canvas.classList.add("dragging");resetBase();
+      if(pointers.size>1){wrap._chartGesturing=true;document.querySelectorAll(".chart-tooltip").forEach(t=>t.style.display="none");}
+    });
+    canvas.addEventListener("pointermove",e=>{
+      if(!pointers.has(e.pointerId))return;
+      pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});const current=geometry();
+      if(pointers.size===1 && Math.abs(current.center-base.center)<8 && !wrap._chartGesturing)return;
+      wrap._chartGesturing=true;document.querySelectorAll(".chart-tooltip").forEach(t=>t.style.display="none");
+      const next=calculateGestureWindow(base,current,getAllDatesSorted().length);
+      if(next.count!==visibleCount || next.offset!==chartStartOffset){visibleCount=next.count;chartStartOffset=next.offset;renderAllCharts();}
+    });
+    const end=e=>{pointers.delete(e.pointerId);if(pointers.size)resetBase();else{base=null;canvas.classList.remove("dragging");}};
+    canvas.addEventListener("pointerup",end);canvas.addEventListener("pointercancel",end);canvas.addEventListener("lostpointercapture",end);
+  });
+}
 
 function renderTable(){
   const ds=[...new Set([...(window.db.labs||[]).map(x=>x.date),...(window.db.events||[]).map(x=>x.date)])].sort().reverse();
