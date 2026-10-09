@@ -720,7 +720,7 @@ function renderFluidChart(){
   }
   const barWidth=Math.min(28,Math.max(1,iw/Math.max(1,dates.length)*.65));
   dates.forEach((date,i)=>{
-    const x=getXPos(L,iw,dates.length,i),d=history.get(date);
+    const x=getXPos(L+barWidth/2,iw-barWidth,dates.length,i),d=history.get(date);
     if(d){
       const drinkH=d.drink/maxVal*ih,fluidH=d.fluid/maxVal*ih,base=T+ih;
       ctx.fillStyle="#06b6d4";ctx.fillRect(x-barWidth/2,base-drinkH,barWidth,drinkH);
