@@ -253,6 +253,16 @@ textarea{resize:vertical}
 .quick-record-footer{position:sticky;bottom:-18px;display:grid;grid-template-columns:1fr 2fr;gap:8px;background:#fff;padding:14px 0 4px;margin-top:4px;border-top:1px solid #f1f5f9}
 .quick-record-footer .btn{min-height:46px;font-size:14px}
 @media(max-width:768px){.quick-record-box{padding:16px;max-width:420px}.quick-record-footer{bottom:-16px}.quick-record-date input{font-size:16px}.quick-record-extra .med-checkbox-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.quick-record-extra .med-checkbox-item{font-size:12px;line-height:1.4;overflow-wrap:anywhere}}
+
+.quick-section-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;font-size:13px;font-weight:700}
+.quick-section-heading span{font-size:11px;color:#64748b;font-weight:400}
+.quick-record-box .med-checkbox-grid{max-height:none;overflow:visible;grid-template-columns:repeat(2,minmax(0,1fr))}
+.quick-record-box .med-checkbox-item{min-height:32px;font-size:12px;line-height:1.4;overflow-wrap:anywhere}
+.quick-record-box .quick-amount-grid{margin-top:12px;margin-bottom:8px}
+.quick-record-box .quick-amount{padding:10px}
+.quick-record-box .quick-amount input{min-height:52px;font-size:24px}
+.quick-record-box .quick-memo-label{margin-bottom:10px}
+.quick-record-box .quick-memo-label textarea{height:54px;min-height:54px}
 </style>
 </head>
 <body>
@@ -342,14 +352,14 @@ textarea{resize:vertical}
 
 <!-- 음수 / 수액 빠른 입력 -->
 <div class="modal" id="medicationModal" onclick="if(event.target===this)closeModal('medicationModal')"><div class="modal-box quick-record-box">
-<h3 class="quick-record-title">💧 음수·수액·투약 기록</h3>
+<h3 class="quick-record-title">💊 투약·음수·수액 기록</h3>
 <div class="quick-record-date"><label for="medDate">기록 날짜</label><input id="medDate" type="date"></div>
+<div class="quick-record-extra" id="medSelectionDetails"><div class="quick-section-heading">💊 투약 선택 <span id="selectedMedCount">선택 없음</span></div><div class="med-checkbox-grid" id="medCheckboxGrid"></div></div>
 <div class="quick-amount-grid">
 <label class="quick-amount drink-amount" for="batchDrinkAmount"><span>💧 음수 <small>mL</small></span><input id="batchDrinkAmount" type="number" inputmode="numeric" min="0" step="1" placeholder="0"></label>
 <label class="quick-amount fluid-amount" for="batchFluidAmount"><span>💉 수액 <small>mL</small></span><input id="batchFluidAmount" type="number" inputmode="numeric" min="0" step="1" placeholder="0"></label>
 </div>
-<details class="quick-record-extra" id="medSelectionDetails"><summary>💊 투약 선택 <span id="selectedMedCount">선택 없음</span></summary><div class="med-checkbox-grid" id="medCheckboxGrid"></div></details>
-<details class="quick-record-extra" id="medMemoDetails"><summary>📝 메모 추가 <span>선택 사항</span></summary><label class="quick-memo-label" for="medMemo">메모<textarea id="medMemo" placeholder="특이사항을 입력하세요"></textarea></label></details>
+<div class="quick-record-extra" id="medMemoDetails"><div class="quick-section-heading">📝 메모 추가 <span>선택 사항</span></div><label class="quick-memo-label" for="medMemo">메모<textarea id="medMemo" placeholder="특이사항을 입력하세요"></textarea></label></div>
 <div class="quick-record-footer"><button class="btn" onclick="closeModal('medicationModal')">취소</button><button class="btn primary" onclick="saveMedicationRecord()">기록 저장</button></div>
 </div></div>
 
@@ -701,7 +711,7 @@ function getFluidHistory(){
   });
   return days;
 }
-function getFluidScale(history=getFluidHistory()){return Math.ceil(Math.max(10,...[...history.values()].map(d=>d.total))*1.1/50)*50;}
+function getFluidScale(history=getFluidHistory()){return Math.max(100,Math.ceil(Math.max(0,...[...history.values()].map(d=>d.total))*1.1/100)*100);}
 function renderFluidData(dates,history){
   const body=document.getElementById("fluidDataBody");body.replaceChildren();
   const display=n=>String(Math.round(n*100)/100);
@@ -719,9 +729,9 @@ function renderFluidChart(){
   if(!dates.length || w<100 || h<90)return;
   const L=CANVAS_LEFT_MARGIN,R=CANVAS_RIGHT_MARGIN,T=20,B=30,iw=w-L-R,ih=h-T-B,maxVal=getFluidScale(history);
   ctx.font="11px sans-serif";ctx.textAlign="left";ctx.fillStyle="#64748b";ctx.fillText("mL",L,12);
-  for(let i=0;i<=3;i++){
-    const y=T+ih*i/3;ctx.strokeStyle="#e2e8f0";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(w-R,y);ctx.stroke();
-    ctx.fillStyle="#64748b";ctx.textAlign="right";ctx.fillText(Math.round(maxVal*(1-i/3)),L-7,y+3);
+  for(let value=0;value<=maxVal;value+=100){
+    const y=T+ih*(1-value/maxVal);ctx.strokeStyle="#e2e8f0";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(w-R,y);ctx.stroke();
+    ctx.fillStyle="#64748b";ctx.textAlign="right";ctx.fillText(value,L-7,y+3);
   }
   const barWidth=Math.min(28,Math.max(1,iw/Math.max(1,dates.length)*.65));
   dates.forEach((date,i)=>{
@@ -939,8 +949,6 @@ function openMedicationModal(){
   document.getElementById("medMemo").value="";
   document.getElementById("batchFluidAmount").value="";
   document.getElementById("batchDrinkAmount").value="";
-  document.getElementById("medSelectionDetails").open=false;
-  document.getElementById("medMemoDetails").open=false;
   document.getElementById("selectedMedCount").textContent="선택 없음";
   document.querySelector("#medicationModal .modal-box").scrollTop=0;
   
