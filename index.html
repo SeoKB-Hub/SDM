@@ -237,7 +237,7 @@ textarea{resize:vertical}
 
 <main class="container">
 <div class="record-actions">
-<button class="btn primary" onclick="openMedicationModal()"><span>💊</span> 투약·음수·수액</button>
+<button class="btn primary" onclick="openMedicationModal()"><span>💊</span> 투약·수액·음수</button>
 <button class="btn primary" onclick="openEvent()"><span>📝</span> 증상 기록</button>
 <button class="btn primary" onclick="openMedicalUpload(null,true)"><span>🧪</span> 검사 입력</button>
 </div>
@@ -265,14 +265,14 @@ textarea{resize:vertical}
 <details class="event-panel" id="chartEventPanel" open><summary>기간 내 이벤트 <span id="chartEventCount">0건</span></summary><div id="chartEventLabels" class="chart-event-labels" aria-label="날짜별 증상 및 특이사항"></div></details>
 </div>
 
-<div class="card" style="margin-top:12px"><div class="section-title fluid-title">음수·수액 추이</div>
+<div class="card" style="margin-top:12px"><div class="section-title fluid-title">수액·음수 추이</div>
 <div class="fluid-legend-bar">
-  <span><span style="color:#06b6d4">■</span> 음수량</span>
   <span><span style="color:#2563eb">■</span> 수액량</span>
+  <span><span style="color:#06b6d4">■</span> 음수량</span>
 </div>
 <div class="chart-scroll" id="fluidChartScroll" tabindex="0" aria-label="차트, 한 손가락 날짜 이동, 두 손가락 기간 확대 축소"><div class="chart-content"><div class="chart-wrap" id="fluidChartWrap" style="height:200px"><canvas id="fluidChart"></canvas><div class="chart-tooltip" id="fluidChartTooltip"></div></div></div></div>
-<details class="fluid-data" open><summary>음수·수액 데이터 <span class="muted">단위 mL</span></summary>
-<div class="table-container"><table aria-label="날짜별 음수 수액 합계"><thead><tr><th scope="col">날짜</th><th scope="col">음수</th><th scope="col">수액</th><th scope="col">합계</th></tr></thead><tbody id="fluidDataBody"></tbody></table></div></details>
+<details class="fluid-data" open><summary>수액·음수 데이터 <span class="muted">단위 mL</span></summary>
+<div class="table-container"><table aria-label="날짜별 수액 음수 합계"><thead><tr><th scope="col">날짜</th><th scope="col">수액</th><th scope="col">음수</th><th scope="col">합계</th></tr></thead><tbody id="fluidDataBody"></tbody></table></div></details>
 </div>
 
 <details class="section fold-section" id="medicationDetails"><summary>💊 투약 기록 보기</summary>
@@ -696,7 +696,7 @@ function renderFluidData(dates,history){
   const display=n=>String(Math.round(n*100)/100);
   dates.forEach(date=>{
     const d=history.get(date),tr=document.createElement("tr");
-    [date.slice(5).replace("-","/"),d?.hasDrink?display(d.drink):"—",d?.hasFluid?display(d.fluid):"—",d?display(d.total):"—"].forEach(value=>{const td=document.createElement("td");td.textContent=value;tr.append(td);});body.append(tr);
+    [date.slice(5).replace("-","/"),d?.hasFluid?display(d.fluid):"—",d?.hasDrink?display(d.drink):"—",d?display(d.total):"—"].forEach(value=>{const td=document.createElement("td");td.textContent=value;tr.append(td);});body.append(tr);
   });
   if(!dates.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=4;td.textContent="기록 없음";tr.append(td);body.append(tr);}
 }
@@ -717,8 +717,8 @@ function renderFluidChart(){
     const x=getXPos(L+barWidth/2,iw-barWidth,dates.length,i),d=history.get(date);
     if(d){
       const drinkH=d.drink/maxVal*ih,fluidH=d.fluid/maxVal*ih,base=T+ih;
-      ctx.fillStyle="#06b6d4";ctx.fillRect(x-barWidth/2,base-drinkH,barWidth,drinkH);
-      ctx.fillStyle="#2563eb";ctx.fillRect(x-barWidth/2,base-drinkH-fluidH,barWidth,fluidH);
+      ctx.fillStyle="#2563eb";ctx.fillRect(x-barWidth/2,base-fluidH,barWidth,fluidH);
+      ctx.fillStyle="#06b6d4";ctx.fillRect(x-barWidth/2,base-fluidH-drinkH,barWidth,drinkH);
       fluidChartPoints.push({x,...d});
     }
     if(shouldLabelDate(i,dates.length)){ctx.fillStyle="#64748b";ctx.font="11px sans-serif";ctx.textAlign="center";ctx.fillText(date.slice(5).replace("-","/"),x,h-8);}
@@ -815,7 +815,7 @@ function setupTooltip(wid,tid,getP,content){
 }
 function labTooltip(p){return `<b>${p.date.replace("T"," ")}</b><br>${metric}: <b>${p.value}</b><br><span style="font-size:10px;color:#94a3b8">(정상: ${p.refMin}~${p.refMax})</span>`;}
 setupTooltip("chartWrap","chartTooltip",()=>labChartPoints,labTooltip);
-setupTooltip("fluidChartWrap","fluidChartTooltip",()=>fluidChartPoints,p=>`<b>${p.date}</b><br>💧 음수량: <b>${p.drink} ml</b><br>💉 수액량: <b>${p.fluid} ml</b><br>📊 <b>합계: ${p.total} ml</b>`);
+setupTooltip("fluidChartWrap","fluidChartTooltip",()=>fluidChartPoints,p=>`<b>${p.date}</b><br>💉 수액량: <b>${p.fluid} ml</b><br>💧 음수량: <b>${p.drink} ml</b><br>📊 <b>합계: ${p.total} ml</b>`);
 setupTooltip("medChartWrap","medChartTooltip",()=>medChartPoints,p=>`<b>${p.date}</b><br>💊 약품: <b>${p.medName}</b><br>상세: ${p.details}`);
 
 // A shared index window drives every chart; gesture anchors stay under the fingers.
