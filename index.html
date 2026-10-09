@@ -715,7 +715,7 @@ function getFluidScale(history=getFluidHistory()){return Math.max(100,Math.ceil(
 function renderFluidData(dates,history){
   const body=document.getElementById("fluidDataBody");body.replaceChildren();
   const display=n=>String(Math.round(n*100)/100);
-  dates.forEach(date=>{
+  [...dates].reverse().forEach(date=>{
     const d=history.get(date),tr=document.createElement("tr");
     [date.slice(5).replace("-","/"),d?.hasFluid?display(d.fluid):"—",d?.hasDrink?display(d.drink):"—",d?display(d.total):"—"].forEach(value=>{const td=document.createElement("td");td.textContent=value;tr.append(td);});body.append(tr);
   });
