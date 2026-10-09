@@ -223,15 +223,6 @@ textarea{resize:vertical}
 
 [hidden]{display:none!important}
 .chart-wrap canvas{touch-action:none}
-.combined-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:10px}
-.combined-summary>div{min-width:0;padding:8px;background:#f8fafc;border-radius:8px}
-.combined-summary strong{display:block;font-size:22px;line-height:1.3}
-.combined-summary span,.combined-summary small{font-size:11px;display:block;overflow-wrap:anywhere}
-.combined-summary small{color:#64748b;margin-top:3px}
-.combined-legend{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
-.combined-legend button{background:#fff;border:1px solid var(--border);border-radius:8px;padding:8px;font-size:12px;min-height:40px;cursor:pointer}
-.combined-legend button[aria-pressed="false"]{opacity:.45;text-decoration:line-through}
-@media(max-width:768px){.combined-summary{gap:4px}.combined-summary>div{padding:7px 5px}.combined-summary strong{font-size:20px}.combined-summary small{font-size:10px}}
 </style>
 </head>
 <body>
@@ -252,14 +243,11 @@ textarea{resize:vertical}
 
 <section class="section" style="margin-top:0">
 <div class="section-title">검사 추이 <span class="muted" style="font-size:11px;font-weight:500">한 손가락: 날짜 이동 · 두 손가락: 기간 확대·축소</span></div>
-<div class="sync-controller"><label for="viewRange">기록 날짜 <output id="viewRangeValue" for="viewRange">30개</output></label><input type="range" id="viewRange" min="3" max="30" value="30" oninput="onRangeChange(this.value)"></div>
-<div class="chart-navigation"><button class="btn" id="chartPrevious" onclick="moveChartPeriod(1)">‹ 이전</button><span id="chartPeriod" aria-live="polite"></span><button class="btn" id="chartNext" onclick="moveChartPeriod(-1)">다음 ›</button></div>
+<div class="chart-navigation"><button class="btn" id="chartPrevious" onclick="moveChartPeriod(1)">‹ 이전</button><span><span id="chartPeriod" aria-live="polite"></span> · <span id="viewRangeValue">30개</span></span><button class="btn" id="chartNext" onclick="moveChartPeriod(-1)">다음 ›</button></div>
 
 <div class="card lab-card">
 <div class="metric-picker"><label for="mobileMetric">검사 항목</label><select id="mobileMetric" onchange="selectMetric(this.value)"></select></div>
 <div class="metric-latest"><div><span id="metricName"></span><strong id="metricValue">—</strong><span id="metricUnit"></span></div><span id="metricDate" class="muted"></span></div>
-<div id="combinedSummary" class="combined-summary"></div>
-<div id="combinedLegend" class="combined-legend" aria-label="통합 그래프 항목 표시"></div>
 <div class="spec-legend-bar">
   <div class="tabs" id="metricTabs" style="margin-bottom:0"></div>
   <div class="spec-range-badge" id="specRangeBadge">정상 범위: -</div>
@@ -272,8 +260,8 @@ textarea{resize:vertical}
 
 <div class="card" style="margin-top:12px"><div class="section-title fluid-title">음수·수액 추이</div>
 <div class="fluid-legend-bar">
-  <span><span style="color:#06b6d4">■</span> 음수량</span>
-  <span><span style="color:#2563eb">■</span> 수액량</span>
+  <span><span style="color:#06b6d4">━</span> 음수량</span>
+  <span><span style="color:#2563eb">━</span> 수액량</span>
   <span><span style="color:#8b5cf6">●</span> 합계</span>
 </div>
 <div class="chart-scroll" id="fluidChartScroll" tabindex="0" aria-label="차트, 한 손가락 날짜 이동, 두 손가락 기간 확대 축소"><div class="chart-content"><div class="chart-wrap" id="fluidChartWrap" style="height:200px"><canvas id="fluidChart"></canvas><div class="chart-tooltip" id="fluidChartTooltip"></div></div></div></div>
@@ -451,9 +439,7 @@ onValue(ref(firebaseDb,'mimi_medical_data'),snapshot=>{
 </script>
 
 <script>
-let metric="combined",calDate=new Date(),visibleCount=30,chartStartOffset=0;
-const combinedKeys=["K","Phos","Cr","BUN"];
-const hiddenCombinedMetrics=new Set();
+let metric="K",calDate=new Date(),visibleCount=30,chartStartOffset=0;
 let labChartPoints=[],fluidChartPoints=[],medChartPoints=[];
 const defaultMedList = ["간약", "젠토닐", "에피클", "오메가3", "레날어드밴스드", "아미나바스타", "아조딜", "식욕촉진제(크림)", "카리메트", "로포타", "인트라젠"];
 
@@ -472,7 +458,6 @@ const medShortNames = {
 };
 
 document.getElementById("asOf").value=nowDateISO();
-document.getElementById("viewRange").value=visibleCount;
 function nowDateISO(){const n=new Date();n.setMinutes(n.getMinutes()-n.getTimezoneOffset());return n.toISOString().slice(0,10)}
 function nowDateTimeISO(){const n=new Date();n.setMinutes(n.getMinutes()-n.getTimezoneOffset());return n.toISOString().slice(0,16)}
 function fmt(v){return v==null||v===""?"—":v}
@@ -542,9 +527,7 @@ function prepareChartLayout(dates){
     el.querySelector(".chart-wrap").classList.remove("native-scroll");
   });
   document.getElementById("viewRangeValue").textContent=visibleCount+"개";
-  document.getElementById("viewRange").max=Math.max(30,getAllDatesSorted().length);
-  document.getElementById("viewRange").value=visibleCount;
-  const short=d=>d.slice(5).replace("-","/");
+    const short=d=>d.slice(5).replace("-","/");
   document.getElementById("chartPeriod").textContent=dates.length?`${short(dates[0])} – ${short(dates[dates.length-1])}`:"기록 없음";
   document.getElementById("chartPrevious").disabled=chartStartOffset>=Math.max(0,getAllDatesSorted().length-visibleCount);
   document.getElementById("chartNext").disabled=chartStartOffset===0;
@@ -586,13 +569,11 @@ function getXPos(L, iw, len, idx) {
   return L + (iw / (len - 1)) * idx;
 }
 
-function onRangeChange(v){visibleCount=Math.max(3,Math.round(Number(v)||30));renderAllCharts()}
 function selectMetric(m){metric=m;renderAllCharts()}
 
 function renderTabs(){
   const picker=document.getElementById("mobileMetric");
-  const choices=[["combined","K · 인 · Cr · BUN 통합"],...allMetrics];
-  if(!picker.options.length)choices.forEach(m=>{const o=document.createElement("option");o.value=m[0];o.textContent=m[1];picker.append(o);});
+  if(!picker.options.length)allMetrics.forEach(m=>{const o=document.createElement("option");o.value=m[0];o.textContent=m[1];picker.append(o);});
   picker.value=metric;
   const info=allMetrics.find(m=>m[0]===metric);
   const latest=[...sortedLabs()].reverse().find(l=>l[metric]!=null && l[metric]!=="");
@@ -600,21 +581,8 @@ function renderTabs(){
   document.getElementById("metricValue").textContent=latest?latest[metric]:"—";
   document.getElementById("metricUnit").textContent=info?info[2]:"";
   document.getElementById("metricDate").textContent=latest?"최근 검사 "+latest.date.split("T")[0].replaceAll("-","."):"검사 기록 없음";
-  document.getElementById("metricTabs").innerHTML=choices.map(x=>`<button class="tab ${metric===x[0]?"active":""}" onclick="selectMetric('${x[0]}')">${x[0]==="combined"?"통합":x[0]==="AnGap"?"AnGap(+)":x[0]}</button>`).join("");
+  document.getElementById("metricTabs").innerHTML=allMetrics.map(x=>`<button class="tab ${metric===x[0]?"active":""}" onclick="selectMetric('${x[0]}')">${x[0]==="AnGap"?"AnGap(+)":x[0]}</button>`).join("");
   
-  const combined=metric==="combined";
-  document.querySelector(".metric-latest").hidden=combined;
-  document.getElementById("combinedSummary").hidden=!combined;
-  document.getElementById("combinedLegend").hidden=!combined;
-  if(combined){
-    const labs=[...sortedLabs()].reverse();
-    document.getElementById("combinedSummary").innerHTML=combinedKeys.map(key=>{
-      const info=allMetrics.find(m=>m[0]===key),latest=labs.find(l=>validLabValue(l[key]));
-      return `<div><span style="color:${combinedColor(key)}">${combinedName(key)}</span><strong>${latest?Number(latest[key]):"—"}</strong><span>${info[2]}</span><small>${latest?latest.date.slice(5,10).replace("-","/"):"기록 없음"}</small></div>`;
-    }).join("");
-    document.getElementById("combinedLegend").innerHTML=combinedKeys.map(key=>`<button type="button" style="color:${combinedColor(key)}" aria-pressed="${!hiddenCombinedMetrics.has(key)}" onclick="toggleCombinedMetric('${key}')">● ${combinedName(key)}</button>`).join("");
-    document.getElementById("specRangeBadge").textContent="왼쪽: K(mmol/L) · 인/Cr(mg/dL) | 오른쪽: BUN(mg/dL)";
-  }
   const currentMetricInfo = allMetrics.find(x => x[0] === metric);
   if(currentMetricInfo) {
     const name = currentMetricInfo[1];
@@ -634,50 +602,7 @@ function drawEventLinesAndLabels(ctx,dates,L,iw,T,ih){
   });
 }
 
-function validLabValue(v){return v!==null && v!==undefined && v!=="" && Number.isFinite(Number(v));}
-function combinedName(key){return {K:"칼륨 K",Phos:"인 P",Cr:"크레아 Cr",BUN:"BUN"}[key];}
-function combinedColor(key){return {K:"#2563eb",Phos:"#7c3aed",Cr:"#dc2626",BUN:"#d97706"}[key];}
-function toggleCombinedMetric(key){if(hiddenCombinedMetrics.has(key))hiddenCombinedMetrics.delete(key);else hiddenCombinedMetrics.add(key);renderAllCharts();}
-function renderCombinedLabChart(){
-  const c=document.getElementById("chart"),ctx=c.getContext("2d"),dpr=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;
-  c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
-  labChartPoints=[];document.getElementById("chartTooltip").style.display="none";
-  const dates=getVisibleDates(),labs=sortedLabs().filter(l=>dates.includes(l.date.slice(0,10)));
-  if(!dates.length || w<100 || h<70)return;
-  const L=CANVAS_LEFT_MARGIN,R=Math.max(48,CANVAS_RIGHT_MARGIN),T=25,B=35,iw=w-L-R,ih=h-T-B;
-  const shown=combinedKeys.filter(k=>!hiddenCombinedMetrics.has(k));
-  const upper=keys=>{
-    const values=labs.flatMap(l=>keys.filter(k=>validLabValue(l[k])).map(k=>Number(l[k])));
-    const top=Math.max(1,...values)*1.15,step=top>50?10:top>10?5:1;
-    return Math.ceil(top/step)*step;
-  };
-  const leftMax=upper(shown.filter(k=>k!=="BUN")),rightMax=upper(shown.filter(k=>k==="BUN"));
-  ctx.font="10px sans-serif";ctx.textAlign="left";ctx.fillStyle="#64748b";ctx.fillText("K / P / Cr",L,12);
-  ctx.textAlign="right";ctx.fillStyle=combinedColor("BUN");ctx.fillText("BUN",w-R,12);
-  for(let i=0;i<=4;i++){
-    const y=T+ih*i/4;ctx.strokeStyle="#e2e8f0";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(w-R,y);ctx.stroke();
-    ctx.fillStyle="#64748b";ctx.textAlign="right";ctx.fillText((leftMax*(1-i/4)).toFixed(1),L-7,y+3);
-    ctx.fillStyle=combinedColor("BUN");ctx.textAlign="left";ctx.fillText((rightMax*(1-i/4)).toFixed(0),w-R+7,y+3);
-  }
-  drawEventLinesAndLabels(ctx,dates,L,iw,T,ih);
-  // Each timestamp remains a point, including multiple tests on the same day.
-  const xFor=l=>{
-    const day=l.date.slice(0,10),i=dates.indexOf(day),same=labs.filter(a=>a.date.slice(0,10)===day);
-    const rank=same.indexOf(l),ratio=same.length>1?rank/(same.length-1):.5;
-    if(dates.length===1)return L+iw*(same.length>1?.2+ratio*.6:.5);
-    const fraction=same.length>1?(i===0?ratio*.65:i===dates.length-1?(ratio-1)*.65:(ratio-.5)*.65):0;
-    return Math.max(L,Math.min(w-R,getXPos(L,iw,dates.length,i+fraction)));
-  };
-  shown.forEach(key=>{
-    const pts=labs.filter(l=>validLabValue(l[key])).map(l=>({x:xFor(l),y:T+ih*(1-Number(l[key])/(key==="BUN"?rightMax:leftMax)),date:l.date,record:l,key}));
-    ctx.strokeStyle=combinedColor(key);ctx.lineWidth=2;ctx.setLineDash(key==="BUN"?[5,3]:[]);ctx.beginPath();
-    pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();ctx.setLineDash([]);
-    pts.forEach(p=>{ctx.fillStyle=combinedColor(key);ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);ctx.fill();labChartPoints.push(p);});
-  });
-  dates.forEach((d,i)=>{if(!shouldLabelDate(i,dates.length))return;ctx.fillStyle="#64748b";ctx.textAlign="center";ctx.fillText(d.slice(5).replace("-","/"),getXPos(L,iw,dates.length,i),h-10);});
-}
 function renderLabChart(){
-  if(metric==="combined"){renderCombinedLabChart();return;}
   const c=document.getElementById("chart"),ctx=c.getContext("2d"),dpr=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;
   c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
   labChartPoints=[];document.getElementById("chartTooltip").style.display="none";
@@ -780,92 +705,40 @@ function parseFluidValue(s){if(!s)return 0;const m=String(s).match(/(\d+(\.\d+)?
 function renderFluidChart(){
   const c=document.getElementById("fluidChart"),ctx=c.getContext("2d"),dpr=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;
   c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
-  fluidChartPoints=[];const dates=getVisibleDates();if(!dates.length)return;
-  
-  const L=CANVAS_LEFT_MARGIN,R=CANVAS_RIGHT_MARGIN,T=20,B=30,iw=w-L-R,ih=h-T-B;
-  const fd=dates.map(d=>{
-    let ev=(window.db.events||[]).filter(e=>e.date.startsWith(d)),drink=0,fluid=0;
-    ev.forEach(e=>{
-      if(e.type==="음수") drink += parseFluidValue(e.title+" "+e.memo);
-      if(e.type==="수액") fluid += parseFluidValue(e.title+" "+e.memo);
-    });
-    return{date:d,drink,fluid,total:drink+fluid};
+  fluidChartPoints=[];document.getElementById("fluidChartTooltip").style.display="none";
+  const dates=getVisibleDates();if(!dates.length || w<100 || h<90)return;
+  const L=CANVAS_LEFT_MARGIN,R=CANVAS_RIGHT_MARGIN,T=60,B=30,iw=w-L-R,ih=h-T-B;
+  const fd=dates.map(date=>{
+    const ev=(window.db.events||[]).filter(e=>e.date && e.date.slice(0,10)===date);
+    const drinks=ev.filter(e=>e.type==="음수"),fluids=ev.filter(e=>e.type==="수액");
+    const sum=items=>items.reduce((v,e)=>v+parseFluidValue(e.title+" "+(e.memo||"")),0);
+    const drink=sum(drinks),fluid=sum(fluids);
+    return {date,drink,fluid,total:drink+fluid,hasDrink:drinks.length>0,hasFluid:fluids.length>0,hasTotal:drinks.length+fluids.length>0};
   });
-
-  let maxVal=Math.ceil(Math.max(...fd.map(d=>d.total),10)/10)*10;
-  
-  ctx.strokeStyle="#e2e8f0";ctx.lineWidth=1;
-  for(let i=0;i<4;i++){
-    let y=T+ih*i/3;
-    ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(w-R,y);ctx.stroke();
-    ctx.fillStyle="#64748b";ctx.font="11px sans-serif";
-    ctx.fillText((maxVal-maxVal*i/3).toFixed(0)+' ml',5,y+3);
+  const maxVal=Math.ceil(Math.max(10,...fd.map(d=>d.total))*1.1/50)*50;
+  ctx.font="11px sans-serif";ctx.textAlign="left";
+  ctx.fillStyle="#6d28d9";ctx.fillText("일별 합계 (mL)",L,12);
+  for(let i=0;i<=3;i++){
+    const y=T+ih*i/3;ctx.strokeStyle="#e2e8f0";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(w-R,y);ctx.stroke();
+    ctx.fillStyle="#64748b";ctx.textAlign="right";ctx.fillText(Math.round(maxVal*(1-i/3)),L-7,y+3);
   }
-
-  const barWidth = Math.min(20, Math.max(1.5, iw / dates.length * 0.6));
-
-  fd.forEach((d, i)=>{
-    let x = getXPos(L, iw, dates.length, i);
-    let baseY = T + ih;
-
-    if(d.drink > 0){
-      let hDrink = (d.drink / maxVal) * ih;
-      ctx.fillStyle = "#06b6d4";
-      ctx.fillRect(x - barWidth/2, baseY - hDrink, barWidth, hDrink);
-      
-      if(hDrink >= 10 && fd.length<=8){
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 11px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(Math.round(d.drink), x, baseY - hDrink / 2 + 3);
-      }
-      baseY -= hDrink;
-    }
-
-    if(d.fluid > 0){
-      let hFluid = (d.fluid / maxVal) * ih;
-      ctx.fillStyle = "#2563eb";
-      ctx.fillRect(x - barWidth/2, baseY - hFluid, barWidth, hFluid);
-
-      if(hFluid >= 10 && fd.length<=8){
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 11px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(Math.round(d.fluid), x, baseY - hFluid / 2 + 3);
-      }
-    }
-
-    if(d.total > 0 && fd.length<=8){
-      let totalY = T + ih * (maxVal - d.total) / maxVal;
-      ctx.fillStyle = "#4c1d95";
-      ctx.font = "bold 11px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(Math.round(d.total), x, totalY - 4);
-    }
+  const xFor=i=>getXPos(L,iw,dates.length,i),yFor=value=>T+ih*(1-value/maxVal);
+  [["drink","hasDrink","#06b6d4"],["fluid","hasFluid","#2563eb"],["total","hasTotal","#7c3aed"]].forEach(([key,has,color])=>{
+    const pts=fd.map((d,i)=>({...d,x:xFor(i)})).filter(d=>d[has]);
+    ctx.strokeStyle=color;ctx.lineWidth=key==="total"?2.5:1.7;ctx.setLineDash(key==="total"?[4,3]:[]);ctx.beginPath();
+    pts.forEach((d,i)=>i?ctx.lineTo(d.x,yFor(d[key])):ctx.moveTo(d.x,yFor(d[key])));ctx.stroke();ctx.setLineDash([]);
+    pts.forEach(d=>{ctx.fillStyle=color;ctx.beginPath();ctx.arc(d.x,yFor(d[key]),key==="total"?3:2,0,Math.PI*2);ctx.fill();});
   });
-
-  ctx.strokeStyle="#8b5cf6";ctx.lineWidth=1.5;ctx.setLineDash([3,3]);ctx.beginPath();
+  // Every recorded day's total stays visible above the plot, even at 30 dates.
   fd.forEach((d,i)=>{
-    let x=getXPos(L, iw, dates.length, i),y=T+ih*(maxVal-d.total)/maxVal;
-    i?ctx.lineTo(x,y):ctx.moveTo(x,y);
-  });
-  ctx.stroke();ctx.setLineDash([]);
-
-  fd.forEach((d,i)=>{
-    let x=getXPos(L, iw, dates.length, i),y=T+ih*(maxVal-d.total)/maxVal;
-    ctx.fillStyle="#8b5cf6";ctx.beginPath();ctx.arc(x,y,2.5,0,Math.PI*2);ctx.fill();
-  });
-  
-  dates.forEach((d,i)=>{
-    let x=getXPos(L, iw, dates.length, i);
-    ctx.textAlign="center";
-    let dateSplit = d.split("-");
-    
-    ctx.fillStyle="#64748b";ctx.font="11px sans-serif";
-    if(shouldLabelDate(i,dates.length))ctx.fillText(`${dateSplit[1]}/${dateSplit[2]}`, x, h - 8);
-    
-    let item = fd.find(x=>x.date===d);
-    if(item) fluidChartPoints.push({x,date:d,...item});
+    const x=xFor(i);
+    if(d.hasTotal){
+      ctx.save();ctx.fillStyle="#6d28d9";ctx.font="bold 10px sans-serif";
+      if(dates.length>10){ctx.translate(x,51);ctx.rotate(-Math.PI/2);ctx.textAlign="left";ctx.fillText(String(Math.round(d.total*10)/10),0,3);}
+      else{ctx.textAlign="center";ctx.fillText(String(Math.round(d.total*10)/10),x,39);}
+      ctx.restore();fluidChartPoints.push({x,...d});
+    }
+    if(shouldLabelDate(i,dates.length)){ctx.fillStyle="#64748b";ctx.font="11px sans-serif";ctx.textAlign="center";ctx.fillText(d.date.slice(5).replace("-","/"),x,h-8);}
   });
 }
 
@@ -957,13 +830,7 @@ function setupTooltip(wid,tid,getP,content){
   wrap.addEventListener("pointerup",show);
   wrap.addEventListener("pointerleave",()=>tip.style.display="none");
 }
-function labTooltip(p){
-  if(metric!=="combined")return `<b>${p.date.replace("T"," ")}</b><br>${metric}: <b>${p.value}</b><br><span style="font-size:10px;color:#94a3b8">(정상: ${p.refMin}~${p.refMax})</span>`;
-  return `<b>${p.date.replace("T"," ")}</b>`+combinedKeys.map(key=>{
-    const info=allMetrics.find(m=>m[0]===key),value=p.record[key];
-    return `<br><span style="color:${combinedColor(key)}">●</span> ${combinedName(key)}: <b>${validLabValue(value)?Number(value):"—"}</b> ${info[2]}`;
-  }).join("");
-}
+function labTooltip(p){return `<b>${p.date.replace("T"," ")}</b><br>${metric}: <b>${p.value}</b><br><span style="font-size:10px;color:#94a3b8">(정상: ${p.refMin}~${p.refMax})</span>`;}
 setupTooltip("chartWrap","chartTooltip",()=>labChartPoints,labTooltip);
 setupTooltip("fluidChartWrap","fluidChartTooltip",()=>fluidChartPoints,p=>`<b>${p.date}</b><br>💧 음수량: <b>${p.drink} ml</b><br>💉 수액량: <b>${p.fluid} ml</b><br>📊 <b>합계: ${p.total} ml</b>`);
 setupTooltip("medChartWrap","medChartTooltip",()=>medChartPoints,p=>`<b>${p.date}</b><br>💊 약품: <b>${p.medName}</b><br>상세: ${p.details}`);
@@ -984,7 +851,7 @@ function setupChartDrag(){
       return {center,distance:p.length>=2?Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y):0};
     };
     const resetBase=()=>{
-      getVisibleDates();const r=canvas.getBoundingClientRect(),left=wid==="medChartWrap"?Math.max(68,CANVAS_LEFT_MARGIN):CANVAS_LEFT_MARGIN,right=wid==="chartWrap" && metric==="combined"?Math.max(48,CANVAS_RIGHT_MARGIN):CANVAS_RIGHT_MARGIN;
+      getVisibleDates();const r=canvas.getBoundingClientRect(),left=wid==="medChartWrap"?Math.max(68,CANVAS_LEFT_MARGIN):CANVAS_LEFT_MARGIN,right=CANVAS_RIGHT_MARGIN;
       base={...geometry(),count:visibleCount,start:Math.max(0,getAllDatesSorted().length-visibleCount)-chartStartOffset,left:r.left+left,width:r.width-left-right};
     };
     canvas.addEventListener("pointerdown",e=>{
