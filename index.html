@@ -223,6 +223,13 @@ textarea{resize:vertical}
 
 [hidden]{display:none!important}
 .chart-wrap canvas{touch-action:none}
+.fluid-data{margin-top:12px;border-top:1px solid var(--border);padding-top:10px}
+.fluid-data>summary{cursor:pointer;font-size:13px;font-weight:700;padding-bottom:10px}
+.fluid-data>summary .muted{font-size:11px;font-weight:400;margin-left:8px}
+.fluid-data .table-container{max-height:240px;border-radius:8px}
+.fluid-data table{width:100%;min-width:0;table-layout:fixed;font-size:12px}
+.fluid-data th,.fluid-data td{padding:9px 4px;white-space:normal}
+.fluid-data td:last-child{font-weight:700;color:#0f172a}
 </style>
 </head>
 <body>
@@ -260,11 +267,12 @@ textarea{resize:vertical}
 
 <div class="card" style="margin-top:12px"><div class="section-title fluid-title">음수·수액 추이</div>
 <div class="fluid-legend-bar">
-  <span><span style="color:#06b6d4">━</span> 음수량</span>
-  <span><span style="color:#2563eb">━</span> 수액량</span>
-  <span><span style="color:#8b5cf6">●</span> 합계</span>
+  <span><span style="color:#06b6d4">■</span> 음수량</span>
+  <span><span style="color:#2563eb">■</span> 수액량</span>
 </div>
 <div class="chart-scroll" id="fluidChartScroll" tabindex="0" aria-label="차트, 한 손가락 날짜 이동, 두 손가락 기간 확대 축소"><div class="chart-content"><div class="chart-wrap" id="fluidChartWrap" style="height:200px"><canvas id="fluidChart"></canvas><div class="chart-tooltip" id="fluidChartTooltip"></div></div></div></div>
+<details class="fluid-data" open><summary>음수·수액 데이터 <span class="muted">단위 mL</span></summary>
+<div class="table-container"><table aria-label="날짜별 음수 수액 합계"><thead><tr><th scope="col">날짜</th><th scope="col">음수</th><th scope="col">수액</th><th scope="col">합계</th></tr></thead><tbody id="fluidDataBody"></tbody></table></div></details>
 </div>
 
 <details class="section fold-section" id="medicationDetails"><summary>💊 투약 기록 보기</summary>
@@ -593,13 +601,13 @@ function renderTabs(){
   }
 }
 
-function drawEventLinesAndLabels(ctx,dates,L,iw,T,ih){
-  dates.forEach((d,i)=>{
-    if(!getChartEvents(d).length)return;
-    const x=getXPos(L,iw,dates.length,i);
-    ctx.save();ctx.strokeStyle="#9333ea";ctx.lineWidth=1;ctx.setLineDash([3,3]);
-    ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,T+ih);ctx.stroke();ctx.restore();
-  });
+function validNumeric(v){return v!==null && v!==undefined && v!=="" && Number.isFinite(Number(v));}
+function getMetricScale(key){
+  const info=allMetrics.find(m=>m[0]===key),vals=(window.db.labs||[]).filter(l=>validNumeric(l[key])).map(l=>Number(l[key]));
+  let min=vals.length?Math.min(...vals):info[4],max=vals.length?Math.max(...vals):info[5];
+  if(vals.length){const margin=max===min?(Math.abs(max)*.1||1):(max-min)*.2;min-=margin;max+=margin;}
+  const precision=key==="pH" || key==="Ca"?100:10;
+  return {min:Math.floor(min*precision)/precision,max:Math.ceil(max*precision)/precision,digits:precision===100?2:1};
 }
 
 function renderLabChart(){
@@ -612,44 +620,20 @@ function renderLabChart(){
   const mi=allMetrics.find(x=>x[0]===metric)||[metric,metric,"","#2563eb",0,10];
   const refMin = mi[4], refMax = mi[5];
 
-  const visibleLabs = labs.filter(x=>dates.includes(x.date.split("T")[0]) && x[metric]!=null);
-  const vals = visibleLabs.map(x=>+x[metric]);
-  
-  // 과도하거나 지루하지 않게 시스템에서 적절한 스케일을 자동 산출
-  let min = vals.length ? Math.min(...vals) : refMin;
-  let max = vals.length ? Math.max(...vals) : refMax;
-  
-  if(vals.length > 0) {
-    let diff = max - min;
-    if (diff === 0) {
-      let margin = Math.abs(max * 0.1) || 1;
-      min -= margin;
-      max += margin;
-    } else {
-      let margin = diff * 0.2;
-      min -= margin;
-      max += margin;
-    }
-  } else {
-    min = refMin;
-    max = refMax;
-  }
-  
-  min = Math.floor(min * 10) / 10;
-  max = Math.ceil(max * 10) / 10;
+  // Entire saved history determines the axis, independently of the visible period.
+  const {min,max,digits}=getMetricScale(metric);
 
   ctx.strokeStyle="#e2e8f0";ctx.lineWidth=1;
   for(let i=0;i<5;i++){
     let y=T+ih*i/4;
     ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(w-R,y);ctx.stroke();
     ctx.fillStyle="#64748b";ctx.font="11px sans-serif";
-    ctx.fillText((max-(max-min)*i/4).toFixed(1),5,y+3)
+    ctx.fillText((max-(max-min)*i/4).toFixed(digits),5,y+3)
   }
 
-  drawEventLinesAndLabels(ctx,dates,L,iw,T,ih);
 
   const renderPoints = dates.map((d, idx) => {
-    const item = labs.find(x => x.date.split("T")[0] === d && x[metric] != null);
+    const item = labs.find(x => x.date.split("T")[0] === d && validNumeric(x[metric]));
     if (!item) return null;
     return {
       x: getXPos(L, iw, dates.length, idx),
@@ -702,43 +686,48 @@ function renderLabChart(){
 
 function parseFluidValue(s){if(!s)return 0;const m=String(s).match(/(\d+(\.\d+)?)/);return m?parseFloat(m[1]):0}
 
+function getFluidHistory(){
+  const days=new Map();
+  (window.db.events||[]).forEach(e=>{
+    if(!e.date || !["음수","수액"].includes(e.type))return;
+    const date=e.date.slice(0,10),d=days.get(date)||{date,drink:0,fluid:0,total:0,hasDrink:false,hasFluid:false,hasTotal:true};
+    const key=e.type==="음수"?"drink":"fluid";
+    d[key]+=parseFluidValue(e.title+" "+(e.memo||""));d[e.type==="음수"?"hasDrink":"hasFluid"]=true;d.total=d.drink+d.fluid;days.set(date,d);
+  });
+  return days;
+}
+function getFluidScale(history=getFluidHistory()){return Math.ceil(Math.max(10,...[...history.values()].map(d=>d.total))*1.1/50)*50;}
+function renderFluidData(dates,history){
+  const body=document.getElementById("fluidDataBody");body.replaceChildren();
+  const display=n=>String(Math.round(n*100)/100);
+  dates.forEach(date=>{
+    const d=history.get(date),tr=document.createElement("tr");
+    [date.slice(5).replace("-","/"),d?.hasDrink?display(d.drink):"—",d?.hasFluid?display(d.fluid):"—",d?display(d.total):"—"].forEach(value=>{const td=document.createElement("td");td.textContent=value;tr.append(td);});body.append(tr);
+  });
+  if(!dates.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=4;td.textContent="기록 없음";tr.append(td);body.append(tr);}
+}
 function renderFluidChart(){
   const c=document.getElementById("fluidChart"),ctx=c.getContext("2d"),dpr=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;
   c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
   fluidChartPoints=[];document.getElementById("fluidChartTooltip").style.display="none";
-  const dates=getVisibleDates();if(!dates.length || w<100 || h<90)return;
-  const L=CANVAS_LEFT_MARGIN,R=CANVAS_RIGHT_MARGIN,T=60,B=30,iw=w-L-R,ih=h-T-B;
-  const fd=dates.map(date=>{
-    const ev=(window.db.events||[]).filter(e=>e.date && e.date.slice(0,10)===date);
-    const drinks=ev.filter(e=>e.type==="음수"),fluids=ev.filter(e=>e.type==="수액");
-    const sum=items=>items.reduce((v,e)=>v+parseFluidValue(e.title+" "+(e.memo||"")),0);
-    const drink=sum(drinks),fluid=sum(fluids);
-    return {date,drink,fluid,total:drink+fluid,hasDrink:drinks.length>0,hasFluid:fluids.length>0,hasTotal:drinks.length+fluids.length>0};
-  });
-  const maxVal=Math.ceil(Math.max(10,...fd.map(d=>d.total))*1.1/50)*50;
-  ctx.font="11px sans-serif";ctx.textAlign="left";
-  ctx.fillStyle="#6d28d9";ctx.fillText("일별 합계 (mL)",L,12);
+  const dates=getVisibleDates(),history=getFluidHistory();renderFluidData(dates,history);
+  if(!dates.length || w<100 || h<90)return;
+  const L=CANVAS_LEFT_MARGIN,R=CANVAS_RIGHT_MARGIN,T=20,B=30,iw=w-L-R,ih=h-T-B,maxVal=getFluidScale(history);
+  ctx.font="11px sans-serif";ctx.textAlign="left";ctx.fillStyle="#64748b";ctx.fillText("mL",L,12);
   for(let i=0;i<=3;i++){
     const y=T+ih*i/3;ctx.strokeStyle="#e2e8f0";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(w-R,y);ctx.stroke();
     ctx.fillStyle="#64748b";ctx.textAlign="right";ctx.fillText(Math.round(maxVal*(1-i/3)),L-7,y+3);
   }
-  const xFor=i=>getXPos(L,iw,dates.length,i),yFor=value=>T+ih*(1-value/maxVal);
-  [["drink","hasDrink","#06b6d4"],["fluid","hasFluid","#2563eb"],["total","hasTotal","#7c3aed"]].forEach(([key,has,color])=>{
-    const pts=fd.map((d,i)=>({...d,x:xFor(i)})).filter(d=>d[has]);
-    ctx.strokeStyle=color;ctx.lineWidth=key==="total"?2.5:1.7;ctx.setLineDash(key==="total"?[4,3]:[]);ctx.beginPath();
-    pts.forEach((d,i)=>i?ctx.lineTo(d.x,yFor(d[key])):ctx.moveTo(d.x,yFor(d[key])));ctx.stroke();ctx.setLineDash([]);
-    pts.forEach(d=>{ctx.fillStyle=color;ctx.beginPath();ctx.arc(d.x,yFor(d[key]),key==="total"?3:2,0,Math.PI*2);ctx.fill();});
-  });
-  // Every recorded day's total stays visible above the plot, even at 30 dates.
-  fd.forEach((d,i)=>{
-    const x=xFor(i);
-    if(d.hasTotal){
-      ctx.save();ctx.fillStyle="#6d28d9";ctx.font="bold 10px sans-serif";
-      if(dates.length>10){ctx.translate(x,51);ctx.rotate(-Math.PI/2);ctx.textAlign="left";ctx.fillText(String(Math.round(d.total*10)/10),0,3);}
-      else{ctx.textAlign="center";ctx.fillText(String(Math.round(d.total*10)/10),x,39);}
-      ctx.restore();fluidChartPoints.push({x,...d});
+  const barWidth=Math.min(28,Math.max(1,iw/Math.max(1,dates.length)*.65));
+  dates.forEach((date,i)=>{
+    const x=getXPos(L,iw,dates.length,i),d=history.get(date);
+    if(d){
+      const drinkH=d.drink/maxVal*ih,fluidH=d.fluid/maxVal*ih,base=T+ih;
+      ctx.fillStyle="#06b6d4";ctx.fillRect(x-barWidth/2,base-drinkH,barWidth,drinkH);
+      ctx.fillStyle="#2563eb";ctx.fillRect(x-barWidth/2,base-drinkH-fluidH,barWidth,fluidH);
+      fluidChartPoints.push({x,...d});
     }
-    if(shouldLabelDate(i,dates.length)){ctx.fillStyle="#64748b";ctx.font="11px sans-serif";ctx.textAlign="center";ctx.fillText(d.date.slice(5).replace("-","/"),x,h-8);}
+    if(shouldLabelDate(i,dates.length)){ctx.fillStyle="#64748b";ctx.font="11px sans-serif";ctx.textAlign="center";ctx.fillText(date.slice(5).replace("-","/"),x,h-8);}
   });
 }
 
