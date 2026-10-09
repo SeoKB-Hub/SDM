@@ -230,6 +230,29 @@ textarea{resize:vertical}
 .fluid-data table{width:100%;min-width:0;table-layout:fixed;font-size:12px}
 .fluid-data th,.fluid-data td{padding:9px 4px;white-space:normal}
 .fluid-data td:last-child{font-weight:700;color:#0f172a}
+
+.quick-record-box{max-width:480px;padding:18px}
+.quick-record-title{margin:0 0 16px;font-size:18px}
+.quick-record-date{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.quick-record-date label{font-size:13px;font-weight:600;white-space:nowrap}
+.quick-record-date input{width:180px;font-size:14px;min-height:42px}
+.quick-amount-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.quick-amount{display:block;min-width:0;background:#f8fafc;border:1px solid var(--border);border-radius:12px;padding:12px}
+.quick-amount>span{display:flex;align-items:center;justify-content:space-between;gap:4px;font-size:14px;font-weight:700}
+.quick-amount small{font-size:11px;font-weight:500;color:#64748b}
+.quick-amount input{width:100%;min-height:62px;margin-top:8px;font-size:26px;font-weight:700;padding:10px;border-radius:8px}
+.drink-amount{background:#ecfeff;border-color:#a5f3fc}.fluid-amount{background:#eff6ff;border-color:#bfdbfe}
+.quick-record-extra{border:1px solid var(--border);border-radius:10px;margin-top:8px;padding:0 12px}
+.quick-record-extra>summary{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px;font-weight:600;cursor:pointer;padding:12px 0}
+.quick-record-extra>summary span{font-size:11px;font-weight:400;color:#64748b}
+.quick-record-extra>summary::after{content:'＋';color:#64748b}.quick-record-extra[open]>summary::after{content:'−'}
+.quick-record-extra>summary span{margin-left:auto}
+.quick-record-extra .med-checkbox-grid{margin-bottom:12px;border:0;background:#f8fafc}
+.quick-memo-label{display:block;margin-bottom:12px;font-size:12px;color:#64748b}
+.quick-memo-label textarea{display:block;width:100%;height:70px;min-height:60px;margin-top:6px;font-size:14px}
+.quick-record-footer{position:sticky;bottom:-18px;display:grid;grid-template-columns:1fr 2fr;gap:8px;background:#fff;padding:14px 0 4px;margin-top:4px;border-top:1px solid #f1f5f9}
+.quick-record-footer .btn{min-height:46px;font-size:14px}
+@media(max-width:768px){.quick-record-box{padding:16px;max-width:420px}.quick-record-footer{bottom:-16px}.quick-record-date input{font-size:16px}.quick-record-extra .med-checkbox-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.quick-record-extra .med-checkbox-item{font-size:12px;line-height:1.4;overflow-wrap:anywhere}}
 </style>
 </head>
 <body>
@@ -317,29 +340,17 @@ textarea{resize:vertical}
 <details class="section fold-section" id="calendarDetails"><summary>🗓️ 기록 캘린더</summary><div class="card"><div class="calendar-head"><button class="btn" onclick="moveMonth(-1)">‹</button><strong id="monthTitle" style="font-size:14px"></strong><button class="btn" onclick="moveMonth(1)">›</button></div><div class="calendar" id="calendar"></div></div></details>
 </main>
 
-<!-- 투약 / 수액 / 음수 일괄 입력 모달 -->
-<div class="modal" id="medicationModal" onclick="if(event.target===this)closeModal('medicationModal')"><div class="modal-box">
-<h3 style="margin-top:0;font-size:16px">💊 일괄 데이터 입력 (투약 / 수액 / 음수)</h3>
-<p class="muted">한 번에 일괄 기록이 가능합니다. 해당 사항이 있는 항목만 입력하세요.</p>
-<div style="margin-bottom:12px"><label style="font-size:11px;font-weight:600">기록 날짜<br><input id="medDate" type="date" style="width:100%;margin-top:2px"></label></div>
-
-<div class="batch-input-section">
-  <div class="batch-input-title">💊 1. 복용 약품 선택 (빠른 체크)</div>
-  <div class="med-checkbox-grid" id="medCheckboxGrid"></div>
+<!-- 음수 / 수액 빠른 입력 -->
+<div class="modal" id="medicationModal" onclick="if(event.target===this)closeModal('medicationModal')"><div class="modal-box quick-record-box">
+<h3 class="quick-record-title">💧 음수·수액·투약 기록</h3>
+<div class="quick-record-date"><label for="medDate">기록 날짜</label><input id="medDate" type="date"></div>
+<div class="quick-amount-grid">
+<label class="quick-amount drink-amount" for="batchDrinkAmount"><span>💧 음수 <small>mL</small></span><input id="batchDrinkAmount" type="number" inputmode="numeric" min="0" step="1" placeholder="0"></label>
+<label class="quick-amount fluid-amount" for="batchFluidAmount"><span>💉 수액 <small>mL</small></span><input id="batchFluidAmount" type="number" inputmode="numeric" min="0" step="1" placeholder="0"></label>
 </div>
-
-<div class="batch-input-section">
-  <div class="batch-input-title">💉 2. 수액 투여량 (ml)</div>
-  <input id="batchFluidAmount" type="number" step="1" style="width:100%" placeholder="예: 100">
-</div>
-
-<div class="batch-input-section">
-  <div class="batch-input-title">💧 3. 음수량 (ml)</div>
-  <input id="batchDrinkAmount" type="number" step="1" style="width:100%" placeholder="예: 80">
-</div>
-
-<div style="margin-bottom:10px"><label style="font-size:11px;font-weight:600">추가 메모 (선택)<br><textarea id="medMemo" style="width:100%;height:50px;margin-top:2px" placeholder="통합 특이사항 입력"></textarea></label></div>
-<div style="display:flex;justify-content:flex-end;gap:6px;margin-top:14px"><button class="btn" onclick="closeModal('medicationModal')">취소</button><button class="btn primary" onclick="saveMedicationRecord()">일괄 저장</button></div>
+<details class="quick-record-extra" id="medSelectionDetails"><summary>💊 투약 선택 <span id="selectedMedCount">선택 없음</span></summary><div class="med-checkbox-grid" id="medCheckboxGrid"></div></details>
+<details class="quick-record-extra" id="medMemoDetails"><summary>📝 메모 추가 <span>선택 사항</span></summary><label class="quick-memo-label" for="medMemo">메모<textarea id="medMemo" placeholder="특이사항을 입력하세요"></textarea></label></details>
+<div class="quick-record-footer"><button class="btn" onclick="closeModal('medicationModal')">취소</button><button class="btn primary" onclick="saveMedicationRecord()">기록 저장</button></div>
 </div></div>
 
 <div class="modal" id="medicalModal" onclick="if(event.target===this)closeModal('medicalModal')"><div class="modal-box">
@@ -928,15 +939,23 @@ function openMedicationModal(){
   document.getElementById("medMemo").value="";
   document.getElementById("batchFluidAmount").value="";
   document.getElementById("batchDrinkAmount").value="";
+  document.getElementById("medSelectionDetails").open=false;
+  document.getElementById("medMemoDetails").open=false;
+  document.getElementById("selectedMedCount").textContent="선택 없음";
+  document.querySelector("#medicationModal .modal-box").scrollTop=0;
   
   const grid = document.getElementById("medCheckboxGrid");
   grid.innerHTML = defaultMedList.map(m=>`
     <label class="med-checkbox-item">
-      <input type="checkbox" name="medCheckItem" value="${m}"> ${m}
+      <input type="checkbox" name="medCheckItem" value="${m}" onchange="updateMedSelectionCount()"> ${m}
     </label>
   `).join("");
 }
 
+function updateMedSelectionCount(){
+  const count=document.querySelectorAll('input[name="medCheckItem"]:checked').length;
+  document.getElementById("selectedMedCount").textContent=count?count+"개 선택":"선택 없음";
+}
 function saveMedicationRecord(){
   let dateInput=document.getElementById("medDate").value;
   if(!dateInput) dateInput = nowDateISO();
