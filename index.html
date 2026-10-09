@@ -161,39 +161,102 @@ textarea{resize:vertical}
  .modal-box div[style*="grid-template-columns:repeat(2"]{grid-template-columns:minmax(0,1fr)!important}
 }
 
+
+/* 2026-10: 모바일에서는 화면 안에 검사 추이와 이벤트를 함께 보여줍니다. */
+.record-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.record-actions .btn{min-height:48px;padding:10px 8px;font-size:14px}
+.utility-panel{margin-bottom:18px;color:var(--text-muted);font-size:12px}
+.utility-panel>summary{cursor:pointer;padding:6px 2px;width:fit-content}
+.utility-panel .toolbar{margin:8px 0 0;padding:12px;background:#fff;border:1px solid var(--border);border-radius:10px}
+.asof-control{display:flex;align-items:center;gap:8px;margin-left:auto;font-size:12px;min-width:0}
+.metric-picker{display:none}
+.metric-latest{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.metric-latest>div{display:flex;align-items:baseline;gap:7px;min-width:0}
+#metricName{font-size:13px;font-weight:700;color:#64748b}#metricValue{font-size:30px;line-height:1.1;letter-spacing:-1px}#metricUnit{font-size:12px;color:#64748b}
+#metricDate{text-align:right;font-size:11px;flex-shrink:0}
+.spec-legend-bar{margin-bottom:8px}
+.spec-range-badge{background:#f8fafc;border:0;padding:6px 8px;font-size:11px}
+.chart-scroll{overflow-x:hidden}
+.chart-event-labels{display:block;padding:0!important}
+.chart-event-column{width:auto!important;display:grid;grid-template-columns:72px minmax(0,1fr);gap:8px;padding:10px 0;border-top:1px solid #f1eaf9}
+.chart-event-date{font-size:12px;margin:0;text-align:left;line-height:1.5;padding-top:6px}
+.chart-event-list{display:flex;flex-direction:column;gap:5px;min-width:0}
+.chart-event-item{display:flex;align-items:flex-start;gap:8px;border:0;border-radius:6px;padding:7px 8px;margin:0;min-height:36px;font-size:13px;line-height:1.5}
+.chart-event-time{font-size:11px;flex:0 0 36px;line-height:1.8}
+.chart-event-title{min-width:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.event-panel{margin-top:12px;border-top:1px solid var(--border);padding-top:8px}
+.event-panel>summary{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:700;color:#6b21a8;padding:6px 0;cursor:pointer}
+.event-panel>summary::after{content:'⌄';margin-left:8px}.event-panel[open]>summary::after{content:'⌃'}
+#chartEventCount{margin-left:auto;font-size:11px;font-weight:500}
+.fold-section{background:#fff;border:1px solid var(--border);border-radius:12px;margin-top:12px}
+.fold-section>summary{list-style:none;padding:15px 14px;font-size:14px;font-weight:700;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.fold-section>summary::after{content:'＋';color:#64748b}.fold-section[open]>summary::after{content:'−'}
+.fold-section .card{border:0;box-shadow:none;border-top:1px solid var(--border);border-radius:0 0 12px 12px}
+.section-title{font-size:16px;margin-bottom:10px}.section-title>span{font-size:12px!important;margin-left:8px}
+.fluid-title{font-size:14px}.fluid-legend-bar{margin-top:-24px}
+.sync-controller{padding:8px 10px;gap:12px;margin-bottom:8px}
+.sync-controller label{font-size:12px}
+.chart-navigation{margin-bottom:10px}.chart-navigation .btn{min-height:36px;padding:6px 10px;font-size:12px}
+@media(max-width:768px){
+ .header{padding:12px 14px}.header .title{font-size:17px}#syncBadge{font-size:9px}
+ .container{padding:0 12px;margin:14px auto}.card{padding:14px;border-radius:12px}
+ .record-actions{gap:6px}.record-actions .btn{flex-direction:column;gap:4px;font-size:12px;min-height:64px;border-radius:10px}.record-actions .btn span{font-size:18px}
+ .utility-panel{margin-bottom:14px}.utility-panel>summary{font-size:11px}
+ .utility-panel .toolbar>.btn{flex:0 0 auto}.utility-panel .asof-control{flex-basis:100%;justify-content:space-between;margin-left:0}
+ .utility-panel .asof-control input{max-width:210px}
+ .section-title>span{display:block;margin:4px 0 0;font-size:11px!important}
+ .sync-controller{flex-wrap:nowrap;gap:10px;padding:8px 10px}
+ .sync-controller label{flex:0 0 auto;white-space:nowrap;font-size:11px}
+ .sync-controller input[type=range]{flex:1;flex-basis:auto;width:auto;min-width:0;min-height:28px}
+ .chart-navigation span{font-size:11px;white-space:nowrap}.chart-navigation .btn{min-height:36px}
+ .metric-picker{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+ .metric-picker label{font-size:12px;font-weight:700;color:#64748b}.metric-picker select{min-height:40px;width:64%;font-size:14px;background:#f8fafc}
+ #metricTabs{display:none}.spec-legend-bar{display:block;margin-bottom:4px}.spec-range-badge{margin:0;display:block}
+ .metric-latest{margin-bottom:8px}#metricValue{font-size:32px}#metricName{font-size:12px}
+ #chartWrap{height:225px!important}#fluidChartWrap{height:200px!important}#medChartWrap{height:320px!important}
+ .chart-event-column{grid-template-columns:60px minmax(0,1fr);gap:6px}.chart-event-date{font-size:11px}
+ .chart-event-item{font-size:13px}.fluid-title{font-size:14px}.fluid-legend-bar{font-size:10px;gap:8px;margin-top:0}
+ .table-container{max-height:360px}.sticky-date{min-width:102px}
+ .fold-section>summary{padding:14px;font-size:13px}.chart-wrap canvas{cursor:default}
+}
+
 </style>
 </head>
 <body>
 <header class="header"><div class="header-inner"><div class="title" style="display:flex;align-items:center;gap:6px">🐩 미미 의료기록 <span id="syncBadge">연동 중...</span></div></div></header>
 
 <main class="container">
-<div class="toolbar">
-<button class="btn primary" onclick="openMedicationModal()">💊 일괄기록(투약/수액/음수)</button>
-<button class="btn primary" onclick="openEvent()">🚨 증상</button>
-<button class="btn primary" onclick="openMedicalUpload(null,true)">✍️ 의료기록</button>
+<div class="record-actions">
+<button class="btn primary" onclick="openMedicationModal()"><span>💊</span> 투약·음수·수액</button>
+<button class="btn primary" onclick="openEvent()"><span>📝</span> 증상 기록</button>
+<button class="btn primary" onclick="openMedicalUpload(null,true)"><span>🧪</span> 검사 입력</button>
+</div>
+<details class="utility-panel"><summary>백업 · 복원 · 기준일</summary><div class="toolbar">
 <button class="btn" onclick="exportData()">💾 백업</button>
 <button class="btn" onclick="document.getElementById('restoreInput').click()">📥 복원</button>
 <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="importData(event)">
-<label class="btn asof-control" style="margin-left:auto">기준일 <input id="asOf" type="date" onchange="render()"></label>
-</div>
+<label class="asof-control">기준일 <input id="asOf" type="date" onchange="render()"></label>
+</div></details>
 
 <section class="section" style="margin-top:0">
-<div class="section-title">📈 주요 검사 추이 <span class="muted" style="font-size:11px;font-weight:500">← 좌우로 밀어 보기 · 이전/다음으로 기간 이동</span></div>
-<div class="sync-controller"><label for="viewRange">표시할 기록 날짜 <output id="viewRangeValue" for="viewRange">10개</output></label><input type="range" id="viewRange" min="3" max="30" value="10" oninput="onRangeChange(this.value)"></div>
+<div class="section-title">검사 추이 <span class="muted" style="font-size:11px;font-weight:500">점을 누르면 수치 · 보라색 표시에는 이벤트</span></div>
+<div class="sync-controller"><label for="viewRange">기록 날짜 <output id="viewRangeValue" for="viewRange">10개</output></label><input type="range" id="viewRange" min="3" max="30" value="10" oninput="onRangeChange(this.value)"></div>
 <div class="chart-navigation"><button class="btn" id="chartPrevious" onclick="moveChartPeriod(1)">‹ 이전</button><span id="chartPeriod" aria-live="polite"></span><button class="btn" id="chartNext" onclick="moveChartPeriod(-1)">다음 ›</button></div>
 
-<div class="card">
+<div class="card lab-card">
+<div class="metric-picker"><label for="mobileMetric">검사 항목</label><select id="mobileMetric" onchange="selectMetric(this.value)"></select></div>
+<div class="metric-latest"><div><span id="metricName"></span><strong id="metricValue">—</strong><span id="metricUnit"></span></div><span id="metricDate" class="muted"></span></div>
 <div class="spec-legend-bar">
   <div class="tabs" id="metricTabs" style="margin-bottom:0"></div>
   <div class="spec-range-badge" id="specRangeBadge">정상 범위: -</div>
 </div>
 <div class="chart-scroll" id="labChartScroll" tabindex="0" aria-label="검사 추이 차트, 좌우 스크롤 가능"><div class="chart-content">
-<div id="chartEventLabels" class="chart-event-labels" aria-label="날짜별 증상 및 특이사항"></div>
-<div class="chart-wrap" id="chartWrap" style="height:260px"><canvas id="chart"></canvas><div class="chart-tooltip" id="chartTooltip"></div></div>
+<div class="chart-wrap" id="chartWrap" style="height:240px"><canvas id="chart"></canvas><div class="chart-tooltip" id="chartTooltip"></div></div>
 </div></div>
+<details class="event-panel" id="chartEventPanel" open><summary>기간 내 이벤트 <span id="chartEventCount">0건</span></summary><div id="chartEventLabels" class="chart-event-labels" aria-label="날짜별 증상 및 특이사항"></div></details>
 </div>
 
-<div class="card" style="margin-top:12px">
+<div class="card" style="margin-top:12px"><div class="section-title fluid-title">음수·수액 추이</div>
 <div class="fluid-legend-bar">
   <span><span style="color:#06b6d4">■</span> 음수량</span>
   <span><span style="color:#2563eb">■</span> 수액량</span>
@@ -202,12 +265,11 @@ textarea{resize:vertical}
 <div class="chart-scroll" id="fluidChartScroll" tabindex="0" aria-label="차트, 좌우 스크롤 가능"><div class="chart-content"><div class="chart-wrap" id="fluidChartWrap" style="height:200px"><canvas id="fluidChart"></canvas><div class="chart-tooltip" id="fluidChartTooltip"></div></div></div></div>
 </div>
 
-<div class="section-title" style="margin-top:14px">💊 일자별 투약 여부 타임라인 차트</div>
+<details class="section fold-section" id="medicationDetails"><summary>💊 투약 기록 보기</summary>
 <div class="card"><div class="chart-scroll" id="medChartScroll" tabindex="0" aria-label="차트, 좌우 스크롤 가능"><div class="chart-content"><div class="chart-wrap" id="medChartWrap" style="height:200px"><canvas id="medicationChart"></canvas><div class="chart-tooltip" id="medChartTooltip"></div></div></div></div></div>
-</section>
+</details></section>
 
-<section class="section">
-<div class="section-title">🧪 전체 데이터</div>
+<details class="section fold-section" id="tableDetails"><summary>🧪 전체 검사·증상 기록</summary>
 <div class="card"><div class="table-container"><table>
 <thead>
 <tr>
@@ -240,9 +302,9 @@ textarea{resize:vertical}
 </tr>
 </thead>
 <tbody id="dataTable"></tbody></table></div></div>
-</section>
+</details>
 
-<section class="section"><div class="section-title">🗓️ 의료기록 캘린더</div><div class="card"><div class="calendar-head"><button class="btn" onclick="moveMonth(-1)">‹</button><strong id="monthTitle" style="font-size:14px"></strong><button class="btn" onclick="moveMonth(1)">›</button></div><div class="calendar" id="calendar"></div></div></section>
+<details class="section fold-section" id="calendarDetails"><summary>🗓️ 기록 캘린더</summary><div class="card"><div class="calendar-head"><button class="btn" onclick="moveMonth(-1)">‹</button><strong id="monthTitle" style="font-size:14px"></strong><button class="btn" onclick="moveMonth(1)">›</button></div><div class="calendar" id="calendar"></div></div></details>
 </main>
 
 <!-- 투약 / 수액 / 음수 일괄 입력 모달 -->
@@ -450,52 +512,52 @@ function getVisibleDates(){
   return d.slice(start, start + visibleCount);
 }
 
-const CANVAS_LEFT_MARGIN = 80;
-const CANVAS_RIGHT_MARGIN = 64;
+let CANVAS_LEFT_MARGIN = 80;
+let CANVAS_RIGHT_MARGIN = 64;
 function getChartEvents(date){
   return (window.db.events||[]).filter(e=>e.date && e.date.split("T")[0]===date && !["투약","음수","수액"].includes(e.type)).sort((a,b)=>a.date.localeCompare(b.date));
 }
 function prepareChartLayout(dates){
+  const mobile=window.matchMedia("(max-width:768px)").matches;
+  CANVAS_LEFT_MARGIN=mobile?48:80;CANVAS_RIGHT_MARGIN=mobile?24:40;
   const scrolls=[...document.querySelectorAll(".chart-scroll")];
-  const minWidth=CANVAS_LEFT_MARGIN+CANVAS_RIGHT_MARGIN+Math.max(1,dates.length-1)*72;
-  const width=Math.max(scrolls[0].clientWidth,minWidth);
   scrolls.forEach(el=>{
-    el.firstElementChild.style.width=width+"px";
-    el.querySelector(".chart-wrap").classList.toggle("native-scroll",width>el.clientWidth);
+    el.firstElementChild.style.width="100%";
+    el.querySelector(".chart-wrap").classList.remove("native-scroll");
   });
   document.getElementById("viewRangeValue").textContent=visibleCount+"개";
-  document.getElementById("chartPeriod").textContent=dates.length?`${dates[0]} ~ ${dates[dates.length-1]}`:"기록 없음";
+  const short=d=>d.slice(5).replace("-","/");
+  document.getElementById("chartPeriod").textContent=dates.length?`${short(dates[0])} – ${short(dates[dates.length-1])}`:"기록 없음";
   document.getElementById("chartPrevious").disabled=chartStartOffset>=Math.max(0,getAllDatesSorted().length-visibleCount);
   document.getElementById("chartNext").disabled=chartStartOffset===0;
-  renderEventAnnotations(dates,width);
+  renderEventAnnotations(dates);
 }
-function renderEventAnnotations(dates,width){
-  const layer=document.getElementById("chartEventLabels");
-  layer.replaceChildren();
-  const groups=dates.map(getChartEvents);
-  if(!groups.some(g=>g.length))return;
-  const iw=width-CANVAS_LEFT_MARGIN-CANVAS_RIGHT_MARGIN;
-  const columnWidth=dates.length===1?Math.min(280,iw):Math.min(110,iw/(dates.length-1)-8);
-  layer.style.paddingLeft=(dates.length===1?CANVAS_LEFT_MARGIN:CANVAS_LEFT_MARGIN-columnWidth/2)+"px";
-  layer.style.paddingRight=(dates.length===1?CANVAS_RIGHT_MARGIN:CANVAS_RIGHT_MARGIN-columnWidth/2)+"px";
-  layer.style.justifyContent=dates.length===1?"center":"space-between";
-  dates.forEach((date,i)=>{
-    const col=document.createElement("div");col.className="chart-event-column";col.style.width=columnWidth+"px";
-    if(groups[i].length){
-      const heading=document.createElement("div");heading.className="chart-event-date";
-      heading.textContent=`${date.slice(5).replace("-","/")} · ${groups[i].length}건`;col.append(heading);
-      groups[i].forEach(event=>{
-        const button=document.createElement("button");button.type="button";button.className="chart-event-item";
-        button.title=event.memo||"눌러서 날짜 상세 보기";
-        if(event.date.includes("T")){
-          const time=document.createElement("span");time.className="chart-event-time";time.textContent=event.date.split("T")[1];button.append(time);
-        }
-        button.append(document.createTextNode(event.title||"증상"));
-        button.addEventListener("click",()=>openDayEvents(date));col.append(button);
-      });
-    }
-    layer.append(col);
+function renderEventAnnotations(dates){
+  const layer=document.getElementById("chartEventLabels");layer.replaceChildren();
+  const count=dates.reduce((n,d)=>n+getChartEvents(d).length,0);
+  document.getElementById("chartEventCount").textContent=count+"건";
+  document.getElementById("chartEventPanel").hidden=count===0;
+  [...dates].reverse().forEach(date=>{
+    const events=getChartEvents(date);if(!events.length)return;
+    const col=document.createElement("div");col.className="chart-event-column";
+    const heading=document.createElement("div");heading.className="chart-event-date";
+    heading.textContent=`${date.slice(5).replace("-","/")}
+${events.length}건`;col.append(heading);
+    const list=document.createElement("div");list.className="chart-event-list";
+    events.forEach(event=>{
+      const button=document.createElement("button");button.type="button";button.className="chart-event-item";
+      button.title=event.memo||"눌러서 날짜 상세 보기";
+      const time=document.createElement("span");time.className="chart-event-time";
+      time.textContent=event.date.includes("T")?event.date.split("T")[1].slice(0,5):"—";
+      const title=document.createElement("span");title.className="chart-event-title";title.textContent=event.title||"증상";
+      button.append(time,title);button.addEventListener("click",()=>openDayEvents(date));list.append(button);
+    });
+    col.append(list);layer.append(col);
   });
+}
+function shouldLabelDate(i,length){
+  const limit=window.matchMedia("(max-width:768px)").matches?5:12;
+  return i===0||i===length-1||i%Math.max(1,Math.ceil((length-1)/(limit-1)))===0;
 }
 function moveChartPeriod(direction){
   const max=Math.max(0,getAllDatesSorted().length-visibleCount);
@@ -510,6 +572,15 @@ function onRangeChange(v){visibleCount=Number(v);chartStartOffset=0;renderAllCha
 function selectMetric(m){metric=m;renderAllCharts()}
 
 function renderTabs(){
+  const picker=document.getElementById("mobileMetric");
+  if(!picker.options.length)allMetrics.forEach(m=>{const o=document.createElement("option");o.value=m[0];o.textContent=m[1];picker.append(o);});
+  picker.value=metric;
+  const info=allMetrics.find(m=>m[0]===metric);
+  const latest=[...sortedLabs()].reverse().find(l=>l[metric]!=null && l[metric]!=="");
+  document.getElementById("metricName").textContent=info?info[0]:metric;
+  document.getElementById("metricValue").textContent=latest?latest[metric]:"—";
+  document.getElementById("metricUnit").textContent=info?info[2]:"";
+  document.getElementById("metricDate").textContent=latest?"최근 검사 "+latest.date.split("T")[0].replaceAll("-","."):"검사 기록 없음";
   document.getElementById("metricTabs").innerHTML=allMetrics.map(x=>`<button class="tab ${metric===x[0]?"active":""}" onclick="selectMetric('${x[0]}')">${x[0]==="AnGap"?"AnGap(+)":x[0]}</button>`).join("");
   
   const currentMetricInfo = allMetrics.find(x => x[0] === metric);
@@ -571,7 +642,7 @@ function renderLabChart(){
   for(let i=0;i<5;i++){
     let y=T+ih*i/4;
     ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(w-R,y);ctx.stroke();
-    ctx.fillStyle="#64748b";ctx.font="9px sans-serif";
+    ctx.fillStyle="#64748b";ctx.font="11px sans-serif";
     ctx.fillText((max-(max-min)*i/4).toFixed(1),5,y+3)
   }
 
@@ -604,16 +675,17 @@ function renderLabChart(){
     let dateSplit = d.split("-");
 
     ctx.fillStyle="#64748b";
-    ctx.font="9px sans-serif";
-    ctx.fillText(`${dateSplit[1]}/${dateSplit[2]}`, x, h - 10);
+    ctx.font="11px sans-serif";
+    if(shouldLabelDate(i,dates.length))ctx.fillText(`${dateSplit[1]}/${dateSplit[2]}`, x, h - 10);
   });
 
   validPts.forEach(p=>{
     ctx.fillStyle=mi[3];ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);ctx.fill();
     
+    if(validPts.length>8 && !shouldLabelDate(validPts.indexOf(p),validPts.length)){labChartPoints.push({x:p.x,y:p.y,date:p.date,value:p.val,refMin,refMax,isAll:false});return;}
     let valStr = String(p.val);
     ctx.save();
-    ctx.font = "bold 10px sans-serif";
+    ctx.font = "bold 11px sans-serif";
     ctx.textAlign = "center";
     let textWidth = ctx.measureText(valStr).width;
     
@@ -651,7 +723,7 @@ function renderFluidChart(){
   for(let i=0;i<4;i++){
     let y=T+ih*i/3;
     ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(w-R,y);ctx.stroke();
-    ctx.fillStyle="#64748b";ctx.font="9px sans-serif";
+    ctx.fillStyle="#64748b";ctx.font="11px sans-serif";
     ctx.fillText((maxVal-maxVal*i/3).toFixed(0)+' ml',5,y+3);
   }
 
@@ -666,9 +738,9 @@ function renderFluidChart(){
       ctx.fillStyle = "#06b6d4";
       ctx.fillRect(x - barWidth/2, baseY - hDrink, barWidth, hDrink);
       
-      if(hDrink >= 10){
+      if(hDrink >= 10 && fd.length<=8){
         ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 8px sans-serif";
+        ctx.font = "bold 11px sans-serif";
         ctx.textAlign = "center";
         ctx.fillText(Math.round(d.drink), x, baseY - hDrink / 2 + 3);
       }
@@ -680,18 +752,18 @@ function renderFluidChart(){
       ctx.fillStyle = "#2563eb";
       ctx.fillRect(x - barWidth/2, baseY - hFluid, barWidth, hFluid);
 
-      if(hFluid >= 10){
+      if(hFluid >= 10 && fd.length<=8){
         ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 8px sans-serif";
+        ctx.font = "bold 11px sans-serif";
         ctx.textAlign = "center";
         ctx.fillText(Math.round(d.fluid), x, baseY - hFluid / 2 + 3);
       }
     }
 
-    if(d.total > 0){
+    if(d.total > 0 && fd.length<=8){
       let totalY = T + ih * (maxVal - d.total) / maxVal;
       ctx.fillStyle = "#4c1d95";
-      ctx.font = "bold 9px sans-serif";
+      ctx.font = "bold 11px sans-serif";
       ctx.textAlign = "center";
       ctx.fillText(Math.round(d.total), x, totalY - 4);
     }
@@ -714,8 +786,8 @@ function renderFluidChart(){
     ctx.textAlign="center";
     let dateSplit = d.split("-");
     
-    ctx.fillStyle="#64748b";ctx.font="9px sans-serif";
-    ctx.fillText(`${dateSplit[1]}/${dateSplit[2]}`, x, h - 8);
+    ctx.fillStyle="#64748b";ctx.font="11px sans-serif";
+    if(shouldLabelDate(i,dates.length))ctx.fillText(`${dateSplit[1]}/${dateSplit[2]}`, x, h - 8);
     
     let item = fd.find(x=>x.date===d);
     if(item) fluidChartPoints.push({x,date:d,...item});
@@ -734,7 +806,7 @@ function renderMedicationChart(){
   });
 
   const meds = activeMeds.length > 0 ? activeMeds : defaultMedList;
-  const L=CANVAS_LEFT_MARGIN,R=CANVAS_RIGHT_MARGIN,T=15,B=25,iw=w-L-R,ih=h-T-B;
+  const L=Math.max(68,CANVAS_LEFT_MARGIN),R=CANVAS_RIGHT_MARGIN,T=15,B=25,iw=w-L-R,ih=h-T-B;
   const rowHeight = ih / meds.length;
 
   meds.forEach((m, idx)=>{
@@ -756,9 +828,9 @@ function renderMedicationChart(){
     let x = getXPos(L, iw, dates.length, di);
     let dateSplit = d.split("-");
     ctx.fillStyle="#64748b";
-    ctx.font="9px sans-serif";
+    ctx.font="11px sans-serif";
     ctx.textAlign="center";
-    ctx.fillText(`${dateSplit[1]}/${dateSplit[2]}`, x, h - 6);
+    if(shouldLabelDate(di,dates.length))ctx.fillText(`${dateSplit[1]}/${dateSplit[2]}`, x, h - 6);
 
     ctx.strokeStyle="#f8fafc";
     ctx.beginPath();
@@ -1092,7 +1164,12 @@ chartScrolls.forEach(source=>source.addEventListener("scroll",()=>{
   chartScrolls.forEach(target=>{if(target!==source && Math.abs(target.scrollLeft-source.scrollLeft)>1)target.scrollLeft=source.scrollLeft;});
   document.querySelectorAll(".chart-tooltip").forEach(t=>t.style.display="none");
 },{passive:true}));
+document.querySelectorAll("details.fold-section").forEach(el=>{
+  if(!window.matchMedia("(max-width:768px)").matches)el.open=true;
+  el.addEventListener("toggle",()=>{if(el.open)renderAllCharts();});
+});
 window.addEventListener("resize",renderAllCharts);
 </script>
 </body>
 </html>
+
