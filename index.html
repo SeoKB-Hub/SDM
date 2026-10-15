@@ -263,6 +263,9 @@ textarea{resize:vertical}
 .quick-record-box .quick-amount input{min-height:52px;font-size:24px}
 .quick-record-box .quick-memo-label{margin-bottom:10px}
 .quick-record-box .quick-memo-label textarea{height:54px;min-height:54px}
+
+.lab-card>#fluidChartScroll{margin-top:0}
+.lab-card>.fluid-legend-bar{margin:4px 0 0;justify-content:flex-end;font-size:11px;gap:12px}
 </style>
 </head>
 <body>
@@ -296,14 +299,11 @@ textarea{resize:vertical}
 <div class="chart-wrap" id="chartWrap" style="height:240px"><canvas id="chart"></canvas><div class="chart-tooltip" id="chartTooltip"></div></div>
 </div></div>
 
-</div>
-
-<div class="card" style="margin-top:12px"><div class="section-title fluid-title">수액·음수 추이</div>
+<div class="chart-scroll" id="fluidChartScroll" tabindex="0" aria-label="차트, 한 손가락 날짜 이동, 두 손가락 기간 확대 축소"><div class="chart-content"><div class="chart-wrap" id="fluidChartWrap" style="height:200px"><canvas id="fluidChart"></canvas><div class="chart-tooltip" id="fluidChartTooltip"></div></div></div></div>
 <div class="fluid-legend-bar">
   <span><span style="color:#2563eb">■</span> 수액량</span>
   <span><span style="color:#06b6d4">■</span> 음수량</span>
 </div>
-<div class="chart-scroll" id="fluidChartScroll" tabindex="0" aria-label="차트, 한 손가락 날짜 이동, 두 손가락 기간 확대 축소"><div class="chart-content"><div class="chart-wrap" id="fluidChartWrap" style="height:200px"><canvas id="fluidChart"></canvas><div class="chart-tooltip" id="fluidChartTooltip"></div></div></div></div>
 <details class="fluid-data" open><summary>수액·음수 데이터 <span class="muted">단위 mL</span></summary>
 <div class="table-container"><table aria-label="날짜별 수액 음수 합계"><thead><tr><th scope="col">날짜</th><th scope="col">수액</th><th scope="col">음수</th><th scope="col">합계</th></tr></thead><tbody id="fluidDataBody"></tbody></table></div></details>
 </div>
@@ -551,7 +551,7 @@ function getChartEvents(date){
 }
 function prepareChartLayout(dates){
   const mobile=window.matchMedia("(max-width:768px)").matches;
-  CANVAS_LEFT_MARGIN=mobile?48:80;CANVAS_RIGHT_MARGIN=mobile?24:40;
+  CANVAS_LEFT_MARGIN=mobile?48:80;CANVAS_RIGHT_MARGIN=48;
   const scrolls=[...document.querySelectorAll(".chart-scroll")];
   scrolls.forEach(el=>{
     el.firstElementChild.style.width="100%";
@@ -698,7 +698,7 @@ function renderLabChart(){
     const width=Math.min(mobile?106:144,iw,Math.max(72,...events.map(e=>ctx.measureText("• "+(e.title||"증상")).width+14))),lines=events.flatMap(e=>wrapChartEventText(ctx,"• "+(e.title||"증상"),width-14));
     return [{date,events,lines,width,height:36+Math.max(0,lines.length-1)*14,anchor:getXPos(L,iw,dates.length,i)}];
   }):[];
-  const layout=placeChartEvents(groups,points,obstacles,{left:L,right:w-R,top:T+2,bottom:T+ih-8,baseHeight:h});
+  const layout=placeChartEvents(groups,points,obstacles,{left:8,right:w-8,top:T+2,bottom:T+ih-8,baseHeight:h});
   // Keep the plot and date axis fixed; use the space below for event cards.
   wrap.style.setProperty("height",layout.height+"px","important");
   c.width=w*dpr;c.height=layout.height*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,layout.height);
@@ -752,11 +752,11 @@ function renderFluidChart(){
   fluidChartPoints=[];document.getElementById("fluidChartTooltip").style.display="none";
   const dates=getVisibleDates(),history=getFluidHistory();renderFluidData(dates,history);
   if(!dates.length || w<100 || h<90)return;
-  const L=CANVAS_LEFT_MARGIN,R=CANVAS_RIGHT_MARGIN,T=20,B=30,iw=w-L-R,ih=h-T-B,maxVal=getFluidScale(history);
-  ctx.font="11px sans-serif";ctx.textAlign="left";ctx.fillStyle="#64748b";ctx.fillText("mL",L,12);
+  const L=CANVAS_LEFT_MARGIN,R=CANVAS_RIGHT_MARGIN,T=14,B=30,iw=w-L-R,ih=h-T-B,maxVal=getFluidScale(history);
+  ctx.font="11px sans-serif";ctx.textAlign="left";ctx.fillStyle="#64748b";ctx.fillText("mL",w-R+7,10);
   for(let value=0;value<=maxVal;value+=100){
     const y=T+ih*(1-value/maxVal);ctx.strokeStyle="#e2e8f0";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(w-R,y);ctx.stroke();
-    ctx.fillStyle="#64748b";ctx.textAlign="right";ctx.fillText(value,L-7,y+3);
+    ctx.fillStyle="#64748b";ctx.textAlign="left";ctx.fillText(value,w-R+7,y+3);
   }
   const barWidth=Math.min(28,Math.max(1,iw/Math.max(1,dates.length)*.65));
   dates.forEach((date,i)=>{
