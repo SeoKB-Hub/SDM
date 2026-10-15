@@ -676,8 +676,8 @@ function drawChartEventCard(ctx,box){
   ctx.save();ctx.fillStyle="#fffbeb";ctx.strokeStyle="#e8dcc0";ctx.lineWidth=1;
   const {x,y,width:w,height:h}=box,r=5;
   ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();ctx.fill();ctx.stroke();
-  ctx.textAlign="left";ctx.fillStyle="#92400e";ctx.font="bold 11px sans-serif";ctx.fillText(box.date.slice(5).replace("-","/"),x+7,y+15);
-  ctx.font="11px sans-serif";ctx.fillStyle="#475569";
+  ctx.textAlign="center";ctx.fillStyle="#92400e";ctx.font="bold 11px sans-serif";ctx.fillText(box.date.slice(5).replace("-","/"),x+w/2,y+15);
+  ctx.textAlign="left";ctx.font="11px sans-serif";ctx.fillStyle="#475569";
   box.lines.forEach((line,i)=>ctx.fillText(line,x+7,y+31+i*14));ctx.restore();
 }
 function renderLabChart(){
@@ -703,7 +703,13 @@ function renderLabChart(){
   ctx.font="11px sans-serif";
   const groups=iw>30?dates.flatMap((date,i)=>{
     const events=getChartEvents(date);if(!events.length)return [];
-    const width=Math.min(mobile?106:144,iw,Math.max(72,...events.map(e=>ctx.measureText(e.title||"증상").width+14))),lines=events.flatMap(e=>wrapChartEventText(ctx,e.title||"증상",width-14));
+    const maxWidth=Math.min(mobile?106:144,iw);
+    const lines=events.flatMap(e=>wrapChartEventText(ctx,e.title||"증상",maxWidth-14));
+    const textWidth=Math.max(0,...lines.map(line=>ctx.measureText(line).width));
+    ctx.font="bold 11px sans-serif";
+    const dateWidth=ctx.measureText(date.slice(5).replace("-","/")).width;
+    ctx.font="11px sans-serif";
+    const width=Math.min(maxWidth,Math.ceil(Math.max(textWidth,dateWidth)+14));
     return [{date,events,lines,width,height:36+Math.max(0,lines.length-1)*14,anchor:getXPos(L,iw,dates.length,i)}];
   }):[];
   const layout=placeChartEvents(groups,points,obstacles,{left:8,right:w-8,top:T+2,bottom:T+ih-8,baseHeight:h});
