@@ -295,7 +295,7 @@ textarea{resize:vertical}
 <div class="chart-scroll" id="labChartScroll" tabindex="0" aria-label="검사 추이 차트, 한 손가락 날짜 이동, 두 손가락 기간 확대 축소"><div class="chart-content">
 <div class="chart-wrap" id="chartWrap" style="height:240px"><canvas id="chart"></canvas><div class="chart-tooltip" id="chartTooltip"></div></div>
 </div></div>
-<details class="event-panel" id="chartEventPanel" open><summary>기간 내 이벤트 <span id="chartEventCount">0건</span></summary><div id="chartEventLabels" class="chart-event-labels" aria-label="날짜별 증상 및 특이사항"></div></details>
+
 </div>
 
 <div class="card" style="margin-top:12px"><div class="section-title fluid-title">수액·음수 추이</div>
@@ -346,6 +346,8 @@ textarea{resize:vertical}
 </thead>
 <tbody id="dataTable"></tbody></table></div></div>
 </details>
+
+<details class="section fold-section event-panel" id="chartEventPanel" open><summary>기간 내 이벤트 <span id="chartEventCount">0건</span></summary><div id="chartEventLabels" class="chart-event-labels" aria-label="날짜별 증상 및 특이사항"></div></details>
 
 <details class="section fold-section" id="calendarDetails"><summary>🗓️ 기록 캘린더</summary><div class="card"><div class="calendar-head"><button class="btn" onclick="moveMonth(-1)">‹</button><strong id="monthTitle" style="font-size:14px"></strong><button class="btn" onclick="moveMonth(1)">›</button></div><div class="calendar" id="calendar"></div></div></details>
 </main>
