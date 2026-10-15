@@ -677,8 +677,8 @@ function drawChartEventCard(ctx,box){
   const {x,y,width:w,height:h}=box,r=5;
   ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();ctx.fill();ctx.stroke();
   ctx.textAlign="center";ctx.fillStyle="#92400e";ctx.font="bold 11px sans-serif";ctx.fillText(box.date.slice(5).replace("-","/"),x+w/2,y+15);
-  ctx.textAlign="left";ctx.font="11px sans-serif";ctx.fillStyle="#475569";
-  box.lines.forEach((line,i)=>ctx.fillText(line,x+7,y+31+i*14));ctx.restore();
+  ctx.textAlign="center";ctx.font="11px sans-serif";ctx.fillStyle="#475569";
+  box.lines.forEach((line,i)=>ctx.fillText(line,x+w/2,y+31+i*14));ctx.restore();
 }
 function renderLabChart(){
   const c=document.getElementById("chart"),wrap=document.getElementById("chartWrap"),ctx=c.getContext("2d"),dpr=devicePixelRatio||1,w=c.clientWidth;
@@ -767,7 +767,7 @@ function renderFluidChart(){
   const dates=getVisibleDates(),history=getFluidHistory();renderFluidData(dates,history);
   if(!dates.length || w<100 || h<90)return;
   const L=CANVAS_LEFT_MARGIN,R=CANVAS_RIGHT_MARGIN,T=14,B=30,iw=w-L-R,ih=h-T-B,maxVal=getFluidScale(history);
-  ctx.font="11px sans-serif";ctx.textAlign="left";ctx.fillStyle="#64748b";ctx.fillText("mL",w-R+7,10);
+  ctx.font="11px sans-serif";ctx.textAlign="left";ctx.fillStyle="#64748b";
   for(let value=0;value<=maxVal;value+=100){
     const y=T+ih*(1-value/maxVal);ctx.strokeStyle="#e2e8f0";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(w-R,y);ctx.stroke();
     ctx.fillStyle="#64748b";ctx.textAlign="left";ctx.fillText(value,w-R+7,y+3);
