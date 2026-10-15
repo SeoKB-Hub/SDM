@@ -649,8 +649,13 @@ function wrapChartEventText(ctx,text,maxWidth){
 function placeChartEvents(groups,points,obstacles,area){
   const lanes=[],boxes=[];
   groups.forEach(group=>{
-    const x=Math.max(area.left,Math.min(area.right-group.width,group.anchor-group.width/2));
-    let lane=lanes.find(row=>!row.boxes.some(r=>x<r.x+r.width+8 && x+group.width+8>r.x));
+    const center=Math.max(area.left,Math.min(area.right-group.width,group.anchor-group.width/2));
+    const offsets=[0,-8,8,-16,16,-24,24,-32,32,-40,40];
+    let lane=null,x=center;
+    for(const row of lanes){
+      const candidate=offsets.map(delta=>Math.max(area.left,Math.min(area.right-group.width,center+delta))).find(px=>!row.boxes.some(r=>px<r.x+r.width+8 && px+group.width+8>r.x));
+      if(candidate!==undefined){lane=row;x=candidate;break;}
+    }
     if(!lane){lane={boxes:[],height:0};lanes.push(lane);}
     lane.boxes.push({...group,x});lane.height=Math.max(lane.height,group.height);
   });
