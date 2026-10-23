@@ -761,6 +761,51 @@ function renderFluidData(dates,history){
   });
   if(!dates.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=4;td.textContent="기록 없음";tr.append(td);body.append(tr);}
 }
+function fluidWeekStart(date){
+  const d=new Date(date+"T00:00:00Z"),day=d.getUTCDay();
+  d.setUTCDate(d.getUTCDate()-((day+6)%7));return d.toISOString().slice(0,10);
+}
+function getFluidWeeklyAverages(dates,history){
+  const totals=new Map();
+  history.forEach((d,date)=>{
+    const key=fluidWeekStart(date),week=totals.get(key)||{sum:0,count:0};
+    week.sum+=d.total;week.count++;totals.set(key,week);
+  });
+  const groups=[];
+  dates.forEach((date,i)=>{
+    const key=fluidWeekStart(date);
+    let group=groups[groups.length-1];
+    if(!group || group.key!==key){group={key,first:i,last:i};groups.push(group);}
+    group.last=i;
+  });
+  return groups.filter(g=>totals.has(g.key)).map(g=>({...g,average:Math.round(totals.get(g.key).sum/totals.get(g.key).count)}));
+}
+function layoutFluidWeeklyAverages(ctx,dates,history,L,iw){
+  ctx.font="600 10px sans-serif";
+  const rows=[];
+  return getFluidWeeklyAverages(dates,history).map(g=>{
+    const x1=L+iw*g.first/dates.length+2,x2=L+iw*(g.last+1)/dates.length-2;
+    const label="평균 "+g.average,width=ctx.measureText(label).width+8;
+    const center=Math.max(L+width/2,Math.min(L+iw-width/2,(x1+x2)/2));
+    let row=rows.findIndex(right=>center-width/2>right+8);
+    if(row<0){row=rows.length;rows.push(0);}rows[row]=center+width/2;
+    return {...g,x1,x2,center,label,width,row};
+  });
+}
+function drawFluidWeeklyAverages(ctx,groups){
+  ctx.save();ctx.font="600 10px sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";
+  groups.forEach(g=>{
+    const y=14+g.row*22;
+    ctx.strokeStyle="#64748b";ctx.fillStyle="#475569";ctx.lineWidth=1;ctx.setLineDash([]);
+    if(g.x2-g.x1>8){
+      ctx.beginPath();ctx.moveTo(g.x1+3,y);ctx.lineTo(g.x2-3,y);
+      ctx.moveTo(g.x1+7,y-3);ctx.lineTo(g.x1+3,y);ctx.lineTo(g.x1+7,y+3);
+      ctx.moveTo(g.x2-7,y-3);ctx.lineTo(g.x2-3,y);ctx.lineTo(g.x2-7,y+3);ctx.stroke();
+    }
+    ctx.fillStyle="rgba(255,255,255,.96)";ctx.fillRect(g.center-g.width/2,y-7,g.width,14);
+    ctx.fillStyle="#475569";ctx.fillText(g.label,g.center,y);
+  });ctx.restore();
+}
 function renderFluidChart(){
   const c=document.getElementById("fluidChart"),ctx=c.getContext("2d"),dpr=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;
   c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
@@ -768,7 +813,9 @@ function renderFluidChart(){
   const dates=getVisibleDates(),history=getFluidHistory();
   if(document.querySelector(".fluid-data").open)renderFluidData(dates,history);
   if(!dates.length || w<100 || h<90)return;
-  const L=CANVAS_LEFT_MARGIN,R=CANVAS_RIGHT_MARGIN,T=14,B=30,iw=w-L-R,ih=h-T-B,maxVal=getFluidScale(history);
+  const L=CANVAS_LEFT_MARGIN,R=CANVAS_RIGHT_MARGIN,B=30,iw=w-L-R;
+  const weekly=layoutFluidWeeklyAverages(ctx,dates,history,L,iw);
+  const T=weekly.length?28+22*Math.max(...weekly.map(g=>g.row)):14,ih=h-T-B,maxVal=getFluidScale(history);
   ctx.font="11px sans-serif";ctx.textAlign="left";ctx.fillStyle="#64748b";
   for(let value=0;value<=maxVal;value+=100){
     const y=T+ih*(1-value/maxVal);ctx.strokeStyle="#e2e8f0";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(w-R,y);ctx.stroke();
@@ -791,6 +838,7 @@ function renderFluidChart(){
     }
     if(shouldLabelDate(i,dates.length)){ctx.fillStyle="#64748b";ctx.font="11px sans-serif";ctx.textAlign="center";ctx.fillText(date.slice(5).replace("-","/"),x,h-8);}
   });
+  drawFluidWeeklyAverages(ctx,weekly);
 }
 
 let chartRenderFrame=0,chartTabsDirty=false;
