@@ -653,8 +653,11 @@ function placeChartEvents(groups,points,obstacles,area){
     const center=Math.max(area.left,Math.min(area.right-group.width,group.anchor-group.width/2));
     const offsets=[0,-8,8,-16,16,-24,24,-32,32,-40,40];
     let lane=null,x=center;
-    for(const row of lanes){
-      const candidate=offsets.map(delta=>Math.max(area.left,Math.min(area.right-group.width,center+delta))).find(px=>!row.boxes.some(r=>px<r.x+r.width+8 && px+group.width+8>r.x));
+    // On narrow screens, never return to an earlier row after wrapping.
+    for(const row of (area.chronological?lanes.slice(-1):lanes)){
+      const candidate=offsets.map(delta=>Math.max(area.left,Math.min(area.right-group.width,center+delta))).find(px=>
+        (!area.chronological || !row.boxes.length || px>=row.boxes[row.boxes.length-1].x+row.boxes[row.boxes.length-1].width+8) &&
+        !row.boxes.some(r=>px<r.x+r.width+8 && px+group.width+8>r.x));
       if(candidate!==undefined){lane=row;x=candidate;break;}
     }
     if(!lane){lane={boxes:[],height:0};lanes.push(lane);}
@@ -713,7 +716,7 @@ function renderLabChart(){
     const width=Math.min(maxWidth,Math.ceil(Math.max(textWidth,dateWidth)+14));
     return [{date,events,lines,width,height:36+Math.max(0,lines.length-1)*14,anchor:getXPos(L,iw,dates.length,i)}];
   }):[];
-  const layout=placeChartEvents(groups,points,obstacles,{left:8,right:w-8,top:T+2,bottom:T+ih-8,baseHeight:h});
+  const layout=placeChartEvents(groups,points,obstacles,{left:8,right:w-8,top:T+2,bottom:T+ih-8,baseHeight:h,chronological:mobile});
   // Keep the plot and date axis fixed; use the space below for event cards.
   wrap.style.setProperty("height",layout.height+"px","important");
   c.width=w*dpr;c.height=layout.height*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,layout.height);
